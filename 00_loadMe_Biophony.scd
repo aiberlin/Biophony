@@ -6,11 +6,107 @@ StartupFile.writeRedirectFile('Biophony');
 //XConnect(\gencomp);
 
 q = q ? ();
+
+q.ntss = q.ntss ? ();
+
+//s.options.device = "UMC1820"; // Behringer 1820 in room 111
+s.options.numInputBusChannels = 12;
+s.options.memSize = 8192 * 32; // boost to 256MB for delaylines
+s.options.numAudioBusChannels = 2048;
+s.options.maxNodes = 4096;
+s.options.numWireBufs = 512;
+s.options.hardwareBufferSize = 256;
+s.options.sampleRate = 44100;
+
+q.ntss.speakersDict = (
+	sub0:    [ 0.0, 0.0, 0.0],
+    ldl7:    [ 0.5,-1.0, 2.0],
+    wd12:    [ 1.5, 0.5, 0.2],
+    wd11:    [ 3.5, 0.5, 0.2],
+    crypt3:  [ 5.5, 0.0, 0.0],
+    brect:   [ 6.5, 0.5, 1.2],
+    wd13:    [ 6.0, 1.5, 1.0],
+    cabass1: [ 6.0, 3.8, 3.5],
+    cryptA:  [ 4.5,-0.5, 1.0],
+    braun1:  [ 4.5, 2.0, 2.2],
+    behring: [ 2.5, 3.0, 2.0],
+	noname:  [ 2.4, 4.0, 3.5],
+    bluecab: [ 2.2, 5.5, 2.2],
+    bw5:     [ 1.2, 5.3, 0.0],
+    ldl8:    [-3.5, 5.2, 0.0],
+	sub1:    [-3.5, 2.8, 0.0],
+    braun2:  [-1.0, 3.8, 3.0],
+    wd14:    [-3.5, 1.0, 0.5],
+    bw6:     [-4.0,-1.0, 1.3],
+    cabass2: [-0.5, 2.8, 0.8],
+    cabass0: [-0.5, 2.9, 0.8],
+);
+
+
+q.ntss.speakersOrder = [
+	// 7 XLR outs from X32, 7 to Denon amp
+	\bw5,
+	\bw6,
+	\cabass2,
+	\cabass0,
+	\cabass1,
+	\ldl7,
+	\ldl8,
+
+	// last XLR out from X32
+	\empty,
+
+	// 8 XLR outs from s16
+	\empty,
+	\empty,
+	\empty,
+	\empty,
+	\empty,
+	\empty,
+	\empty,
+	\empty,
+
+	// 5 JACK outs from s16-RME-ADAT to Yamaha Amp
+	\wd11,
+	\wd13,
+	\wd12,
+	\wd14,
+	\noname,
+
+	// 2 JACK outs from s16-RME-ADAT to stereo amp 1
+	\braun1,
+	\braun2,
+
+	// 1 JACK out from s16-RME-ADAT to stereo amp 2
+	\crypt3,
+
+	// aux 1-6
+	\behring,
+	\cryptA,
+	\bluecab,
+	\empty,
+	\empty,
+	\empty,
+
+	// monitor out
+	\sub0,
+	\sub1,
+];
+
+q.ntss.speakersActive = q.ntss.speakersOrder.reject {|spk| spk == \empty };
+q.ntss.speakers = q.ntss.speakersActive.collect {|key|
+	var loc = q.ntss.speakersDict[key];
+	[loc[0], loc[1], loc[2]]
+}.flat.normalize(-1,1).reshape(q.ntss.speakersActive.size, 3);
+
+q.ntss.amp_names = q.ntss.speakers.size.collect {|i| "amp_%".format(i).asSymbol };
+
 q.numPmcs = 8;
-~num = 5;
-~numRings = 4; // 3 for install, 4 for concert only
-~numIOchans = 24; // 16 for install, 24 for concert
+~num = q.ntss.speakersOrder.size;
+~numIOchans = 32; // 16 for install, 24 for concert
 ~hideChanNdefs = false;
+
+s.options.numOutputBusChannels = ~num;
 
 q.bio = q. bio ? ();
 q.bio.home = thisProcess.nowExecutingPath.dirname.dirname;
@@ -24,25 +120,7 @@ MFdef(\findSoundfiles).add(\find, {
 
 MFdef(\findSoundfiles).();
 
-// Behringer X-USB Mixer alone
-
-// s.options.device = "ZOOM L-12 Driver";
-
-s.options.device = "X-USB";
-s.options.numInputBusChannels = ~numIOchans; // max 32
-s.options.numOutputBusChannels = ~numIOchans; // max 32
-s.options.numAudioBusChannels = 2048;
-s.options.maxNodes = 4096;
-
-// 256 for lower latency, 512 for less CPU peaks
-s.options.hardwareBufferSize = 256;
-s.options.sampleRate = 44100;
-
-s.options.memSize = 8192 * 16;
-s.options.numWireBufs = 512;
-
 // general specs for everything
-
 Spec.add(\amp4, [0, 4, \amp]);
 Spec.add(\amp10, [0, 10, 4.4]);
 Spec.add(\level, \amp4);
@@ -130,14 +208,14 @@ WinBounds.addMake(\Levels, {
 });
 
 WinBounds.addMake(\SpatioScope, {
-	var radiuses = ~numRings.collect { |i|
-		i.linlin(0, ~numRings - 1, 0.2, 0.8) }.postln;
-	q.spat = SpatioScope(
-		radiuses.collect(SpatioScope.ringPos(5, _, -0.5pi)).flat
-	);
+	q.spat = SpatioScope.new(q.ntss.speakers.collect {|sp| Point(*sp)});
+
 	q.spat.magnify_(10);
 	q.spat.parent.background_(Color.blue(0.5));
 	q.spat.ampViews.do(_.stringColor_(Color.white));
+	q.spat.ampViews.do {|view,i|
+		view.string = q.ntss.speakersActive[i];
+	};
 	q.spat.parent.moveTo(120, 480);
 	q.spat.parent
 });
@@ -155,7 +233,6 @@ WinBounds.stored.putAll( (
 ) );
 
 s.waitForBoot {
-
 	Butz.numButz_(20).show;
 
 	Butz.run(\NdefMixer);
@@ -220,7 +297,7 @@ s.waitForBoot {
 
 	1.wait;
 
-	Tdef(\AUTOPILOT).play;
+	//Tdef(\AUTOPILOT).play;
 
 	WinBounds.restoreAll;
 };

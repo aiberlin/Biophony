@@ -86,9 +86,48 @@ ProxyChain.add3(\mix2four, \filter -> { |in|
 }, 1);
 
 
+
+ProxyChain.add3(
+	\mixer,  \filter -> { |in|
+		var snds = in;
+		var amps = q.ntss.amp_names.collect {|name| name.kr(1, spec:\amp) } ++ DC.ar([0,0]);
+		// measured in class:
+		var tuning = [1, 1, 1.35, 2.5, 3, 2.5, 1.75, 1.75, 2, 0.5, 3, 3, 3.25, 3.25, 1, 2] ++ [0,0];
+		snds * (amps * \mainvol.kr(0, spec:\amp) * tuning);
+	},
+	1,
+	q.ntss.amp_names.collect { |name| [name, [0,1,\amp]] }.flatten.asDict
+);
+
+ProxyChain.add3(
+	\shiftSound,  \filter -> { |in|
+		Limiter.ar(LeakDC.ar(
+			in[0..9] ++ DC.ar(0!2) ++ in[10..15],
+			\maxVol.kr(0.99, spec:\amp)))
+	},
+	1,
+);
+
+ProxyChain.add3(\shiftSpeakers, \filter -> {|in|
+	var currentSpeakers = q.ntss.speakers.size;
+	var outs = Silent.ar!s.options.numOutputBusChannels;
+	var counter = 0;
+	q.ntss.speakersOrder.do {|speaker,i|
+		if (speaker != \empty) {
+			outs[i] = in[counter];
+			counter = counter + 1;
+		};
+	};
+	outs.size.postln;
+	outs;
+});
+
+
 MainFX(s).clear;
-MainFX(s, 22, [\levels, \molens, \mix2four, \mix2stereo]);
-MainFX(s).add(\levels, 1);
+MainFX(s, ~num, [\mixer, \mix2four, \mix2stereo, \shiftSpeakers]);
+//MainFX(s).add(\levels, 1);
+MainFX(s).add(\mixer, 1);
+MainFX(s).add(\shiftSpeakers, 1);
 WinBounds.addMake(\MainFX, {
 	var mg = MainFXGui(MainFX(s), 16);
 	mg.editGui.paramGui.paramViews[0].enabled_(false);

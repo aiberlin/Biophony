@@ -250,7 +250,7 @@ q.pchains = q.pcNames.collect { |name, i|
 	ProxyChain.from(Ndef(name), q.pcSlots).set(\micBus, i);
 };
 
-q.panNames = [ \panFixed, \panRoto, \panFeed];
+// q.panNames = [ \panFixed, \panRoto, \panFeed];
 
 // make the buffer and panner for each pch:
 (
@@ -344,7 +344,7 @@ MFdef(\randPanPars).add(\rand, { |pc, rand = 0.01|
 MFdef(\randPanPars).(q.pchains[4]);
 */
 
-
+// MFdef(\setPanner).(q.pchains[0], 7);
 
 // use choose panning algorithm randomly
 // and randomize starting values

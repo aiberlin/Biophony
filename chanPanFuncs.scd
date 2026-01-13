@@ -112,3 +112,119 @@ ProxyChain.add3(\panFeed, { |srcBus, srcPos = 0, srcWidth = 0,
 		[ inside, shakers, outside, bigPA ].collect(_.lag(1)))
 	.flop.flat;
 });
+
+q.ntss = q.ntss ? ();
+q.ntss.spat = q.ntss.spat ? ();
+
+/** distance based amplitude panning:
+k - small is very focused, big is wide
+x, y are positions of left and right channels
+
+**/
+q.ntss.getSpat = { arg ntss, name;
+	{ arg srcBus;
+		var in = InFeedback.ar(srcBus);
+		q.ntss.spat[name].(name, q.ntss.speakers, in);
+	};
+};
+
+q.ntss.spat.dbap = { arg name, speakers, snd;
+	var d, g, norm, srcPos;
+	var k = 11 - "%_k".format(name).asSymbol.kr(1, spec:[1,10]);
+	var x = "%_x".format(name).asSymbol.kr(0, spec:[-1,1]);
+	var y = "%_y".format(name).asSymbol.kr(0, spec:[-1,1]);
+	var sig;
+	srcPos = [x,y];
+	sig = snd;
+	d = speakers.collect { |p|
+		var val = (srcPos - p);
+		val[0].hypot(val[1])
+	};
+	g = 1/(d.pow(k) + 1e-6);
+	norm = (g.squared.sum).sqrt;
+	g = g / norm;
+	sig * g;
+};
+
+
+
+/** distance based delay & amplitude panning:
+k - small is very focused, big is wide
+x, y are positions of left and right channels
+z - is what?
+spread is similar to k
+**/
+
+// was dlypan
+
+q.ntss.spat.delayspat = { arg name, speakers, snd;
+	var k = "%_k".format(name).asSymbol.kr(1, spec:[1,10]);
+	var z = "%_z".format(name).asSymbol.kr(1, spec:[1,30]);
+	var x = "%_x".format(name).asSymbol.kr(0, spec:[-1,1])*k*z;
+	var y = "%_y".format(name).asSymbol.kr(0, spec:[-1,1])*k*z;
+	var spread = 11 - "%_spread".format(name).asSymbol.kr(1, spec:[1,10]);
+	var dists = speakers.collect { |pt|
+		pt = Point(*(pt)*z);
+		(pt.x - x).hypot(pt.y - y)
+	};
+	var g, norm;
+	dists = dists.lag(0.3);
+	g = 1/(dists.pow(spread) + 1e-6);
+	norm = (g.squared.sum).sqrt;
+	g = g / norm;
+	DelayC.ar(snd*g, 1, dists / 344, 1/(1+dists).sqrt);
+};
+
+// for each source channel, on/off for each speaker
+q.ntss.spat.direct = { arg name, speakers, snd;
+	var nchannels = speakers.size;
+	var output = "%_out".format(name).asSymbol.kr(0, spec:[0,nchannels-1, 0, 1]);
+	(0..nchannels-1).collect {|idx|
+		snd * Select.kr(BinaryOpUGen('==', output, idx), [Silent.ar, DC.ar(1)]);
+	};
+};
+
+// for each source channel, set level for each speaker
+q.ntss.spat.mixer = { arg name, speakers, snd;
+	var nchannels = speakers.size;
+	var outs = nchannels.collect {|i| "%_%_out".format(name, i).asSymbol.kr(0, spec: \amp) };
+	snd * outs;
+};
+
+/*** multitap comb filters on each speaker
+- details to follow
+***/
+
+q.ntss.spat.taps = { arg name, speakers, snd;
+	var nspeakers = speakers.size;
+	var taps = nspeakers.collect {|idx|
+		"%_tap_%".format(name, idx).asSymbol.kr(0, spec:[0,4])
+	};
+	(snd*\dry.kr(1, spec:\amp)) + CombC.ar(snd * \send.kr(0, spec:\amp), 4, taps, 6);
+};
+
+/*** multitap comb filters on each speaker, with feedback
+- details to follow
+***/
+q.ntss.spat.tapsfb = { arg name, speakers, snd;
+	var nspeakers = speakers.size;
+	var fb = LocalIn.ar(nspeakers);
+	var taps = nspeakers.collect {|idx|
+		"%_tap_%".format(name, idx).asSymbol.kr(0, spec:[0,4])
+	};
+	var delayline = DelayC.ar(snd * \send.kr(0, spec:\amp) + fb, 4, taps);
+	delayline = PitchShift.ar(delayline, 0.2, {rrand(1.01,0.99)}!nspeakers);
+	LocalOut.ar(delayline * \fb.kr(0, spec:\amp));
+	(snd*\dry.kr(1, spec:\amp)) + delayline;
+};
+
+
+q.ntss.spat.keys.do {|spatName|
+	ProxyChain.add3(spatName, q.ntss.getSpat(spatName));
+};
+
+
+
+
+
+q.panNames = q.panNames ++ q.ntss.spat.keys(Array).sort;
