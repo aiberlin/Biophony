@@ -88,12 +88,15 @@ ProxyChain.add3(\mix2four, \filter -> { |in|
 
 
 ProxyChain.add3(
-	\mixer,  \filter -> { |in|
+	\mainMixer,  \filter -> { |in|
 		var snds = in;
-		var amps = q.ntss.amp_names.collect {|name| name.kr(1, spec:\amp) } ++ DC.ar([0,0]);
+		var mainvol = \mainvol.kr(0, spec:\amp);
+		var amps = q.ntss.amp_names.collect {|name| name.kr(1, spec:\amp) } ++ DC.ar(0!(32-q.ntss.amp_names.size));
 		// measured in class:
-		var tuning = [1, 1, 1.35, 2.5, 3, 2.5, 1.75, 1.75, 2, 0.5, 3, 3, 3.25, 3.25, 1, 2] ++ [0,0];
-		snds * (amps * \mainvol.kr(0, spec:\amp) * tuning);
+		//var tuning = (1!20) ++ (0.0!12);
+		//var tuning = [0.4, 0.35, 0.13, 0.13, 0.14, 0.15, 0.3, 0.7, 0.5, 0.5, 0.5, 0.5, 0.5, 0.4, 0.4, 0.32, 0.4, 0.5, 1, 0.8, 1, 0.6, 0.5, 0.3, 1, 1] ++ (0.0!(32-q.ntss.amp_names.size));
+		var tuning = q.ntss.speakersTuning ++ (0.0!(32-q.ntss.speakersTuning.size));
+		snds * (amps * mainvol * tuning);
 	},
 	1,
 	q.ntss.amp_names.collect { |name| [name, [0,1,\amp]] }.flatten.asDict
@@ -124,12 +127,12 @@ ProxyChain.add3(\shiftSpeakers, \filter -> {|in|
 
 
 MainFX(s).clear;
-MainFX(s, ~num, [\mixer, \mix2four, \mix2stereo, \shiftSpeakers]);
+MainFX(s, ~num, [\mainMixer, \mix2four, \mix2stereo, \shiftSpeakers]);
 //MainFX(s).add(\levels, 1);
-MainFX(s).add(\mixer, 1);
+MainFX(s).add(\mainMixer, 1);
 MainFX(s).add(\shiftSpeakers, 1);
 WinBounds.addMake(\MainFX, {
-	var mg = MainFXGui(MainFX(s), 16);
+	var mg = MainFXGui(MainFX(s), 64);
 	mg.editGui.paramGui.paramViews[0].enabled_(false);
 	mg.parent.name_(\MainFX);
 });
@@ -140,5 +143,6 @@ Butz.add(\MainFX, { WinBounds.showOrMake(\MainFX) });
 (
 [1,2,3,4,5] +.t [1000, 2000]
 ).flop.flat
+MainFX(s).gui
 */
  

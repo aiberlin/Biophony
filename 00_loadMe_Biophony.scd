@@ -9,8 +9,8 @@ q = q ? ();
 
 q.ntss = q.ntss ? ();
 
-//s.options.device = "UMC1820"; // Behringer 1820 in room 111
-s.options.numInputBusChannels = 12;
+s.options.device = "X-USB Multichannel"; // Behringer 1820 in room 111
+s.options.numInputBusChannels = 30;
 s.options.memSize = 8192 * 32; // boost to 256MB for delaylines
 s.options.numAudioBusChannels = 2048;
 s.options.maxNodes = 4096;
@@ -18,28 +18,41 @@ s.options.numWireBufs = 512;
 s.options.hardwareBufferSize = 256;
 s.options.sampleRate = 44100;
 
+/*
+z = [0.4, 0.35, 0.13, 0.13, 0.14, 0.15, 0.3, 0.7, 0.5, 0.5, 0.5, 0.5, 0.5, 0.4, 0.4, 0.32, 0.4, 0.5, 1, 0.8, 1, 0.6, 0.5, 0.3, 1, 1]
+q.ntss.speakers.size
+q.ntss.speakersDict[q.ntss.speakersActive[0]]
+q.ntss.speakersActive.collect { |sp,i| [sp] ++ q.ntss.speakersDict[sp][..2] ++ [z[i]] }.do {|el| "%: [ %, %, %, %],".format(*el).postln }
+*/
+
 q.ntss.speakersDict = (
-	sub0:    [ 0.0, 0.0, 0.0],
-    ldl7:    [ 0.5,-1.0, 2.0],
-    wd12:    [ 1.5, 0.5, 0.2],
-    wd11:    [ 3.5, 0.5, 0.2],
-    crypt3:  [ 5.5, 0.0, 0.0],
-    brect:   [ 6.5, 0.5, 1.2],
-    wd13:    [ 6.0, 1.5, 1.0],
-    cabass1: [ 6.0, 3.8, 3.5],
-    cryptA:  [ 4.5,-0.5, 1.0],
-    braun1:  [ 4.5, 2.0, 2.2],
-    behring: [ 2.5, 3.0, 2.0],
-	noname:  [ 2.4, 4.0, 3.5],
-    bluecab: [ 2.2, 5.5, 2.2],
-    bw5:     [ 1.2, 5.3, 0.0],
-    ldl8:    [-3.5, 5.2, 0.0],
-	sub1:    [-3.5, 2.8, 0.0],
-    braun2:  [-1.0, 3.8, 3.0],
-    wd14:    [-3.5, 1.0, 0.5],
-    bw6:     [-4.0,-1.0, 1.3],
-    cabass2: [-0.5, 2.8, 0.8],
-    cabass0: [-0.5, 2.9, 0.8],
+	//          x    y    z   amp
+	bw5: [ 1.2, 5.3, 0.0, 0.4],
+	bw6: [ -4.0, -1.0, 1.3, 0.35],
+	cabass2: [ -0.5, 2.8, 0.8, 0.13],
+	cabass0: [ -0.5, 2.9, 0.8, 0.13],
+	cabass1: [ 6.0, 3.8, 3.5, 0.14],
+	ldl7: [ 0.5, -1.0, 2.0, 0.15],
+	ldl8: [ -3.5, 5.2, 0.0, 0.3],
+	gene0: [ 2.0, -0.5, 1.0, 0.7],
+	kef0: [ -3.0, 3.0, 3.2, 0.5],
+	kef1: [ 0.5, 6.0, 3.2, 0.5],
+	kef2: [ 0.5, -0.7, 3.2, 0.5],
+	kef3: [ 1.5, 1.0, 2.9, 0.5],
+	kef4: [ -3.5, 2.5, 3.0, 0.5],
+	wd14: [ -3.5, 1.0, 0.5, 0.4],
+	wd13: [ 6.0, 1.5, 1.0, 0.4],
+	wd12: [ 1.5, 0.5, 0.2, 0.32],
+	wd11: [ 3.5, 0.5, 0.2, 0.4],
+	noname: [ 2.4, 4.0, 3.5, 0.5],
+	braun1: [ 4.5, 2.0, 2.2, 1],
+	braun2: [ -1.0, 3.8, 3.0, 0.8],
+	crypt3: [ 5.5, 0.0, 0.0, 1],
+	behring: [ 2.5, 3.0, 2.0, 0.6],
+	cryptA: [ 4.5, -0.5, 1.0, 0.5],
+	bluecab: [ 2.2, 5.5, 2.2, 0.3],
+	sub0: [ 0.0, 0.0, 0.0, 1],
+	sub1: [ -3.5, 2.8, 0.0, 1]
 );
 
 
@@ -54,23 +67,24 @@ q.ntss.speakersOrder = [
 	\ldl8,
 
 	// last XLR out from X32
-	\empty,
+	\gene0,
 
-	// 8 XLR outs from s16
-	\empty,
-	\empty,
-	\empty,
-	\empty,
-	\empty,
+	// 8 XLR outs from s16 to Stereo amps
+	\kef0,
+	\kef1,
+	\kef2,
+	\kef3,
+	\kef4,
+
 	\empty,
 	\empty,
 	\empty,
 
 	// 5 JACK outs from s16-RME-ADAT to Yamaha Amp
-	\wd11,
+	\wd14,
 	\wd13,
 	\wd12,
-	\wd14,
+	\wd11,
 	\noname,
 
 	// 2 JACK outs from s16-RME-ADAT to stereo amp 1
@@ -80,7 +94,7 @@ q.ntss.speakersOrder = [
 	// 1 JACK out from s16-RME-ADAT to stereo amp 2
 	\crypt3,
 
-	// aux 1-6
+	// aux 1-6 from x32 to active speakers
 	\behring,
 	\cryptA,
 	\bluecab,
@@ -94,14 +108,16 @@ q.ntss.speakersOrder = [
 ];
 
 q.ntss.speakersActive = q.ntss.speakersOrder.reject {|spk| spk == \empty };
+q.ntss.speakersTuning = q.ntss.speakersActive.collect {|spk| q.ntss.speakersDict[spk][3] };
 q.ntss.speakers = q.ntss.speakersActive.collect {|key|
 	var loc = q.ntss.speakersDict[key];
 	[loc[0], loc[1], loc[2]]
 }.flat.normalize(-1,1).reshape(q.ntss.speakersActive.size, 3);
 
-q.ntss.amp_names = q.ntss.speakers.size.collect {|i| "amp_%".format(i).asSymbol };
+//q.ntss.amp_names = q.ntss.speakers.size.collect {|i| "amp_%".format(i).asSymbol };
+q.ntss.amp_names = q.ntss.speakersActive;
 
-q.numPmcs = 8;
+q.numPmcs = 16;
 ~num = q.ntss.speakersOrder.size;
 ~numIOchans = 32; // 16 for install, 24 for concert
 ~hideChanNdefs = false;

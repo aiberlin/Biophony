@@ -21,7 +21,7 @@ X pepsi sndfile (sndfile player)
 
 q = q ? ();
 q.numPmcs = q.numPmcs ? 8;
-q.names = [\ada, \bob, \ccc, \dada, \eek, \fifi, \gogo, \hah ];
+q.names = [\ada, \bob, \ccc, \dada, \eek, \fifi, \gogo, \hah, \ivy, \jay, \kiki, \lily, \mimi, \nana, \opo, \qiqo ];
 q.pcNames = q.numPmcs.collect { |i| ("ch" ++ (i+1) ++ q.names[i]).asSymbol };
 q.pannerNames = q.pcNames.collect { |name| name.asString.insert(2, "P").asSymbol };
 
@@ -31,7 +31,7 @@ ProxyChain.add3(\top, { |micBus, proxyBus, bufnum|
 	Silent.ar;
 
 }, 0, (
-	micBus: [0, 15, \lin, 1],
+	micBus: [0, 32, \lin, 1],
 	proxyBus: [64, 100, \lin, 1],
 	bufnum: [0, 200, \lin, 1],
 )
@@ -51,7 +51,7 @@ ProxyChain.add3(\ins, \mix -> { |micBus = 0, micAmp = 0, proxyBus = 4, proxyAmp 
 	snd = LeakDC.ar(snd, 0.999);
 	snd;
 }, 1, (
-	micBus: [0, 15, \lin, 1],
+	micBus: [0, 32, \lin, 1],
 	micAmp: \amp4,
 	proxyBus: [0, 200, \lin, 1],
 	proxyAmp: \amp4,
@@ -258,7 +258,7 @@ q.pchains.do { |pc, i|
 	var mybuf, panNdefName, panner;
 	panNdefName = q.pannerNames[i];
 	panner = Ndef(panNdefName);
-	panner.ar(20);
+	panner.ar(q.ntss.speakers.size);
 	panner.fadeTime = 3;
 	panner.vol = 0.25;
 	panner.set(\srcBus, pc.proxy.index);

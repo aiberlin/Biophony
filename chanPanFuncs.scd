@@ -187,7 +187,7 @@ q.ntss.spat.direct = { arg name, speakers, snd;
 // for each source channel, set level for each speaker
 q.ntss.spat.mixer = { arg name, speakers, snd;
 	var nchannels = speakers.size;
-	var outs = nchannels.collect {|i| "%_%_out".format(name, i).asSymbol.kr(0, spec: \amp) };
+	var outs = nchannels.collect {|i| "%_out".format(q.ntss.speakersActive[i]).asSymbol.kr(0, spec: \amp) };
 	snd * outs;
 };
 
@@ -200,7 +200,8 @@ q.ntss.spat.taps = { arg name, speakers, snd;
 	var taps = nspeakers.collect {|idx|
 		"%_tap_%".format(name, idx).asSymbol.kr(0, spec:[0,4])
 	};
-	(snd*\dry.kr(1, spec:\amp)) + CombC.ar(snd * \send.kr(0, spec:\amp), 4, taps, 6);
+	//(snd*\dry.kr(1, spec:\amp)) + CombC.ar(snd * \send.kr(0, spec:\amp), 4, taps, 6);
+	(snd*\dry.kr(1, spec:\amp)) + CombC.ar(snd * \send.kr(0, spec:\amp), 4, taps, 0);
 };
 
 /*** multitap comb filters on each speaker, with feedback
@@ -222,9 +223,6 @@ q.ntss.spat.tapsfb = { arg name, speakers, snd;
 q.ntss.spat.keys.do {|spatName|
 	ProxyChain.add3(spatName, q.ntss.getSpat(spatName));
 };
-
-
-
 
 
 q.panNames = q.panNames ++ q.ntss.spat.keys(Array).sort;
