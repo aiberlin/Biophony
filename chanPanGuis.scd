@@ -12,25 +12,30 @@ MFdef(\setPanner).(q.pchains[0], 0);
 
 q.inNames;
 q.pchains[0].slotNames.size
+q.pchains[0].getHalo
 */
 
 (
 MFdef(\updatePchWin).add(\proxySource, { |pch|
 	var h = pch.getHalo;
-	if (h.pxDrag.object != h.src) {
-		h.pxDrag.object = h.src
-	};
+	if (h.pxDrag.notNil) {
+		if (h.pxDrag.object != h.src) {
+			h.pxDrag.object = h.src
+		};
+	}
 });
 
 MFdef(\updatePchWin).add(\bufPath, { |pch|
 	var h = pch.getHalo;
 	var filename;
-	if (h.mybuf.notNil and: h.mybuf.path.notNil) {
-		filename = h.mybuf.path.basename;
-		if (h.sfDrag.string != filename) {
-			h.sfDrag.string = filename;
+	if (h.pxDrag.notNil) {
+		if (h.mybuf.notNil and: h.mybuf.path.notNil) {
+			filename = h.mybuf.path.basename;
+			if (h.sfDrag.string != filename) {
+				h.sfDrag.string = filename;
+			};
 		};
-	};
+	}
 });
 MFdef(\updatePchWin).add(\panMode, { |pch|
 	var h = pch.getHalo;
@@ -43,7 +48,8 @@ MFdef(\updatePchWin).add(\panMode, { |pch|
 });
 
 /*
-MFdef(\updatePchWin).(q.pchains[4]);
+MFdef(\updatePchWin).(q.pchains[0]);
+MFdef(\updatePchWin).(q.pchains[2]);
 */
 );
 
@@ -76,6 +82,7 @@ q.pchains.do { |pch, i|
 			pxDrag.string = "drop a proxy/chain!";
 		};
 		pch.addHalo(\pxDrag, pxDrag);
+
 		// dragsink for dropping in soundfiles into buffer
 		sfDrag = DragBoth(w, 160@30).align_(\center).font = font;
 		if (pch.getHalo(\sfname).notNil) {
@@ -86,7 +93,7 @@ q.pchains.do { |pch, i|
 		pch.addHalo(\sfDrag, sfDrag);
 
 		pxDrag.receiveDragHandler = { arg v;
-			var rawdrag = View.currentDrag.postcs;
+			var rawdrag = View.currentDrag.dump;
 			// support dragged code - string objects
 			var drag = if (rawdrag.isString) { rawdrag.interpret } { rawdrag };
 			MFdef(\setSrc).(pch, drag);
@@ -125,7 +132,7 @@ q.pchains.do { |pch, i|
 		};
 		pch.addHalo(\panbuts, panbuts);
 
-		pannerGui = NdefGui(pch.getHalo(\panner).postln, 12, w, 490@250);
+		pannerGui = NdefGui(pch.getHalo(\panner).postln, 16, w, 490@250);
 		pannerGui.paramGui.paramViews[0].enabled_(false);
 		q.tuneNameView(pannerGui);
 		ProxyMeter.addNdefGui(pannerGui);
