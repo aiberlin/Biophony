@@ -55,7 +55,7 @@ WinBounds.addMake(q.topName, {
 		proxyDrag.action = { |drag|  "clicked".postln };
 
 		sfDrag.receiveDragHandler = { arg v;
-			var path = View.currentDrag.postln;
+			var path = View.currentDrag.postcs;
 			MFdef(\setSndfile).(pch, path);
 			MFdef(\updatePchWin).(pch);
 		};

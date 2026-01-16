@@ -93,7 +93,7 @@ q.pchains.do { |pch, i|
 		pch.addHalo(\sfDrag, sfDrag);
 
 		pxDrag.receiveDragHandler = { arg v;
-			var rawdrag = View.currentDrag.dump;
+			var rawdrag = View.currentDrag.postcs;
 			// support dragged code - string objects
 			var drag = if (rawdrag.isString) { rawdrag.interpret } { rawdrag };
 			MFdef(\setSrc).(pch, drag);
