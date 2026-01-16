@@ -1,9 +1,10 @@
-Butz.add(\BIOPHONIUM, { WinBounds.showOrMake(\BIOPHONIUM, true) });
+q.topName = q.topName ? \BIOPHONIUM;
+Butz.add(q.topName, { WinBounds.showOrMake(q.topName, true) });
 
-WinBounds.addMake(\BIOPHONIUM, {
+WinBounds.addMake(q.topName, {
 	var f = Font("Monaco", 18);
 	var f2 = Font("Helvetica", 14);
-	var w = Window("BIOPHONIUM", Rect(520, Window.availableBounds.height - 500, 900, 450)).front;
+	var w = Window(q.topName, Rect(520, Window.availableBounds.height - 500, 900, 450)).front;
 	var allViews, leftCol;
 	w.alpha = 0.8;
 	w.addFlowLayout;
