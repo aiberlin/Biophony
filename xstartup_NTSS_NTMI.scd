@@ -1,9 +1,14 @@
-/*** example startupfile for NTMI and NTSS setup:
+/***
+example startupfile for NTMI and NTSS setup:
+- copy to
+StartupFile.filesDir
+- then adjust path!
 
-load NTSS first,
-then NTMI without MainFX and without reboot
+this loads NTSS first,
+then NTMI with no MainFX and no reboot.
+adds a window for dragsources for NTMI processes,
+so one can drag them to NTSS channels.
 
-add several niceties
 ***/
 
 // I want that sampleRate:
@@ -13,6 +18,7 @@ s.options.sampleRate = 48000;
 q = q ? ();
 
 // now load NTSS, which boots server
+// adjust path to where you have it
 "~/src/aiberlin/Biophony/00_loadMe_NTSS.scd".standardizePath.loadPaths;
 
 q.ntss.finalSetup = {
@@ -24,13 +30,13 @@ q.ntss.finalSetup = {
 	NTMI.usesMainFX = false;
 	MainFX(s).proxy.set(\mainvol, 0.25);
 
-
 	NTMI.run;
 	NTMI.finalSetup = {
-		//make sure they play directly:
+		//make sure the NTMI sounds play directly:
 		NTMI.processes.do(_.set(\amp, 0.25));
 		q.ndef.groups.postcs;
 
+		// prepare groups for new NdefMixer:
 		q.ndef.groupNames = [\ntssChan, \ntssPan, \NTMI];
 		q.ndef.groups.put(\NTMI, NTMI.processes);
 
@@ -44,7 +50,10 @@ q.ntss.finalSetup = {
 
 		Butz(\NTMI).remove(\miniNTMI);
 		Butz(\NTMI).add(\allNdefs, { WinBounds.showOrMake(\allNdefs) });
+		Butz(\NTMI).actions.replace(\ndefMixer, Butz(\top).actions.at(\NdefMixer));
 
+		Butz.curr = \NTSS;
+		Butz.run(\N_T_S_S);
 	};
 };
 

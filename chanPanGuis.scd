@@ -55,7 +55,7 @@ MFdef(\updatePchWin).(q.pchains[2]);
 
 (
 q.pchains.do { |pch, i|
-	Butz.add(pch.key, { WinBounds.showOrMake(pch.key) });
+	Butz(\NTSS).add(pch.key, { WinBounds.showOrMake(pch.key) });
 
 	WinBounds.addMake(pch.key, {
 		var w = Window(pch.key, Rect(100 * i + 300, 600, 500, 820)).front;

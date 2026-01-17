@@ -181,6 +181,7 @@ q.tuneNameView = { |q, obj|
 	};
 	obj
 };
+
 /*
 g = NdefGui(Ndef(\x));
 q.tuneNameView(g);
@@ -190,31 +191,25 @@ q.tuneNameView(g);
 
 Butz.numButz = 24;
 Butz.addMiniMax;
-Butz.add(\N_T_S_S, {});
-
-// Butz.add(\AUTOPILOT, { });
-// Butz.add(\soundfiles, { q.bio.home.openOS });
-// Butz.add(\StartupDial, { StartupFile.dialog });
+Butz.add(\StartupDial, { StartupFile.dialog });
 Butz.add(\SpatioScope, { WinBounds.showOrMake(\SpatioScope) });
 Butz.add(\NdefMixer, { WinBounds.showOrMake(\NdefMixer) });
 Butz.add(\Levels, { WinBounds.showOrMake(\Levels) });
-//// beatstep interface for Biophony
-// Butz.add(\LevelControl, { WinBounds.showOrMake(\LevelControl) });
+Butz.add(\MainFX, { WinBounds.showOrMake(\MainFX) });
+Butz.add(\N_T_S_S, {});
 
-// WinBounds.addMake(\NdefMixer, {
-// 	m = NdefMixer(s, 24).moveTo(120,200);
-// 	m.arGuis.do(q.tuneNameView(_));
-//
-// 	ProxyMeter.hideKrs;
-// 	ProxyMeter.addMixer(m);
-// 	m.parent.name_("NdefMixer");
-// });
+// put NTSS specifics in its own Butz:
+Butz(\NTSS).add(\N_T_S_S, {});
+Butz(\NTSS).add(\SpatioScope, { WinBounds.showOrMake(\SpatioScope) });
+Butz(\NTSS).add(\NdefMixer, { WinBounds.showOrMake(\NdefMixer) });
+Butz(\NTSS).add(\Levels, { WinBounds.showOrMake(\Levels) });
+Butz(\NTSS).add(\MainFX, { WinBounds.showOrMake(\MainFX) });
+
 
 "NdefMixer.scd".postcs.loadRelative;
 
 WinBounds.addMake(\Levels, {
-	var meter = s.meter.window;
-	var win = meter.window.name_("Levels").moveTo(0,0);
+	s.meter.window.name_("Levels").moveTo(0,0);
 });
 
 WinBounds.addMake(\SpatioScope, {
@@ -222,13 +217,23 @@ WinBounds.addMake(\SpatioScope, {
 
 	q.spat.magnify_(10);
 	q.spat.parent.background_(Color.blue(0.5));
+	// make amps semitransparent for overlapping speakers
+	q.spat.ampAlpha = 0.5;
+
 	q.spat.ampViews.do(_.stringColor_(Color.white));
 	q.spat.ampViews.do {|view,i|
 		view.string = q.ntss.speakersActive[i];
+		view.mouseDownAction = {
+			var name = q.ntss.speakersActive[i];
+			"*** q.spat: %, %: %\n".postf(i, name,
+				q.ntss.speakersDict[name]
+			);
+		};
 	};
 	q.spat.parent.moveTo(120, 480);
 	q.spat.parent
 });
+
 
 WinBounds.stored.putAll( (
 	N_T_S_S: Rect(520, Window.availableBounds.height - 430, 900, 450),
@@ -240,9 +245,6 @@ WinBounds.stored.putAll( (
 
 s.waitForBoot {
 	Butz.numButz_(24).show;
-
-	// Butz.run(\NdefMixer);
-	// Butz.run(\Levels);
 
 	0.5.wait;
 	"MainFX.scd".postcs.resolveRelative.loadPaths;

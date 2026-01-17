@@ -1,5 +1,5 @@
 q.topName = q.topName ? \BIOPHONIUM;
-Butz.add(q.topName, { WinBounds.showOrMake(q.topName, true) });
+[Butz, Butz(\NTSS)].do(_.add(q.topName, { WinBounds.showOrMake(q.topName, true) }));
 
 WinBounds.addMake(q.topName, {
 	var f = Font("Monaco", 18);

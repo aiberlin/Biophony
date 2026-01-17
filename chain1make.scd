@@ -279,6 +279,7 @@ q.ndef = q.ndef ? ();
 q.ndef.groups = q.ndef.groups ? ();
 q.ndef.groups.put(\ntssChan, q.pchains.collect(_.proxy));
 q.ndef.groups.put(\ntssPan, q.pchains.collect(_.getHalo(\panner)));
+q.ndef.groupNames.postcs;
 
 MFdef(\setSndfile).add(\setFile, { |pc, pathOrSF|
 	var sfname;
