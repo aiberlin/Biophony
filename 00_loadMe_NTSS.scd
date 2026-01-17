@@ -197,14 +197,16 @@ Butz.add(\Levels, { WinBounds.showOrMake(\Levels) });
 //// beatstep interface for Biophony
 // Butz.add(\LevelControl, { WinBounds.showOrMake(\LevelControl) });
 
-WinBounds.addMake(\NdefMixer, {
-	m = NdefMixer(s, 24).moveTo(120,200);
-	m.arGuis.do(q.tuneNameView(_));
+// WinBounds.addMake(\NdefMixer, {
+// 	m = NdefMixer(s, 24).moveTo(120,200);
+// 	m.arGuis.do(q.tuneNameView(_));
+//
+// 	ProxyMeter.hideKrs;
+// 	ProxyMeter.addMixer(m);
+// 	m.parent.name_("NdefMixer");
+// });
 
-	ProxyMeter.hideKrs;
-	ProxyMeter.addMixer(m);
-	m.parent.name_("NdefMixer");
-});
+"NdefMixer.scd".postcs.loadRelative;
 
 WinBounds.addMake(\Levels, {
 	var meter = s.meter.dump;
