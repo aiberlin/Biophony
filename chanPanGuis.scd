@@ -87,7 +87,7 @@ q.pchains.do { |pch, i|
 		// dragsink for dropping in soundfiles into buffer
 		sfDrag = DragBoth(w, 160@30).align_(\center).font = font;
 		if (pch.getHalo(\sfname).notNil) {
-			sfDrag.object = pch.getHalo(\sfname);
+			sfDrag.string = pch.getHalo(\sfname);
 		} {
 			sfDrag.string = "drop a soundfile!";
 		};
@@ -100,10 +100,12 @@ q.pchains.do { |pch, i|
 			MFdef(\updatepchhWin).(pch);
 		};
 
-
 		sfDrag.receiveDragHandler = { arg v;
 			var path = View.currentDrag.postln;
-			MFdef(\setSndfile).(pch, path);
+			if (MFdef(\setSndfile).(pch, path)[0]) {
+				v.object = pch.getHalo.sfpath;
+				v.string = pch.getHalo.sfname;
+			};
 			MFdef(\updatepchhWin).(pch);
 		};
 

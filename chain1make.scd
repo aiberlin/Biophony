@@ -288,11 +288,14 @@ MFdef(\setSndfile).add(\setFile, { |pc, pathOrSF|
 	};
 	if(pathOrSF.isKindOf(SoundFile).not) {
 		"*** % is not a soundfile!\n".postf(pathOrSF);
+		false
 	} { // we have a soundfile
 		sfname = pathOrSF.path.basename.splitext[0].asSymbol;
 		"OK! loading %\n".postf(sfname);
 		pc.getHalo(\mybuf).allocReadChannel(pathOrSF.path, channels: [0]);
 		pc.addHalo(\sfname, sfname);
+		pc.addHalo(\sfpath, pathOrSF);
+		true;
 	};
 });
 /*

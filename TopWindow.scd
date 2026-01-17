@@ -1,20 +1,40 @@
 q.topName = q.topName ? \BIOPHONIUM;
+
 [Butz, Butz(\NTSS)].do(_.add(q.topName, { WinBounds.showOrMake(q.topName, true) }));
 
 WinBounds.addMake(q.topName, {
+
 	var f = Font("Monaco", 18);
-	var f2 = Font("Helvetica", 14);
+	var f2 = Font("Monaco", 14);
 	var w = Window(q.topName, Rect(520, Window.availableBounds.height - 500, 900, 450)).front;
-	var allViews, leftCol;
+	var allViews, leftCol, volSlider;
 	w.alpha = 0.8;
 	w.addFlowLayout;
 
 	leftCol = CompositeView(w, 60@440);
 	leftCol.addFlowLayout;
 
-	StaticText(leftCol, 60@50).string_("Main Vol").font_(f);
+	StaticText(leftCol, 60@40).string_("Main Vol").font_(f);
 
-	// 	VolumeGui(s.volume, leftCol, Rect(0, 50, 60, 440));
+	volSlider = EZSlider(leftCol, 60@280, "", \amp, { |sl|
+		MainFX(s).proxy.set('mainvol', sl.value);
+	}, MainFX(s).proxy.get('mainvol'),
+	layout: \vert
+	);
+
+	Button(leftCol, 60@30).font_(f)
+	.states_([["MORE"], ["LESS"]])
+	.action_({
+		var bounds = w.bounds;
+		var isBig = bounds.height > 670;
+		bounds.height = if (isBig, 450, 900);
+		w.bounds = bounds;
+	});
+
+	Button(leftCol, 60@60).font_(f2).states_([["Src\nNdefs"]])
+	.action_({
+		WinBounds.showOrMake('allSrcNdefs');
+	});
 
 	allViews = q.pchains.collect { |pch, i|
 		var name = pch.key;
@@ -24,11 +44,14 @@ WinBounds.addMake(q.topName, {
 		var comp = CompositeView(w, widCol@hi).background_(Color.hsv(i / 8, 1, 1));
 		var flow = comp.addFlowLayout(0@0, 0@0);
 		var label = Button(comp, wid@30).states_([[name]]).font_(f)
-		.action = { Butz.run(name) };
-		var inPop = EZPopUpMenu(comp, wid@30).font_(f2).items = q.inNames;
+		.action = { Butz(\NTSS).run(name) };
+
+		var inPop = EZPopUpMenu(comp, wid@30, nil, q.inNames, { |pop|
+			pop.item.postln;
+			pch.set(\micBus, pop.value);
+		}).font_(f2);
+
 		var proxyDrag = DragBoth(comp, wid@30).font_(f2).object = "<proxy>";
-
-
 
 		var sfDrag = DragBoth(comp, wid@30).font_(f2).object = "<sndfile>";
 
@@ -38,40 +61,53 @@ WinBounds.addMake(q.topName, {
 			["PLAY"],["PLAY", Color.black, Color.green]
 		]).font_(f)
 		.action_({ |bt| panna.play; stopBt.value = 0 });
+
 		var stopBt = Button(comp, wid@30).states_([
 			["STOP"],
 			["STOP", Color.white, Color.red],
 		]).font_(f)
 		.action_({ |bt| panna.stop; playBt.value = 0 });
+
+		var panPop = EZPopUpMenu(comp, wid@30, nil, q.panNames, { |pop|
+			pop.item.postln;
+			MFdef(\setPanner).(pch, pop.value);
+		}).font_(f2);
+
 		ProxyMeter.addMonitorGui(moni);
 
 		proxyDrag.receiveDragHandler = { arg v;
 			var drag = View.currentDrag.postcs;
 			// MFdef setSrc accepts proxy, proxychain, or string
 			MFdef(\setSrc).(pch, drag);
-			MFdef(\updatepchhWin).(pch);
+			MFdef(\updatePchWin).(pch);
 		};
 
 		proxyDrag.action = { |drag|  "clicked".postln };
 
 		sfDrag.receiveDragHandler = { arg v;
-			var path = View.currentDrag.postcs;
-			MFdef(\setSndfile).(pch, path);
+			var path = View.currentDrag.postln;
+			if (MFdef(\setSndfile).(pch, path)[0]) {
+				v.object = pch.getHalo.sfpath;
+				v.string = pch.getHalo.sfname;
+			};
 			MFdef(\updatePchWin).(pch);
 		};
 
-
-
-		[inPop, proxyDrag, sfDrag, playBt, stopBt]
+		[inPop, proxyDrag, sfDrag, playBt, stopBt, panPop]
 	}.flop;
 
 	SkipJack({
-		// inPops:
+		var currVol = MainFX(s).proxy.get('mainvol');
+		// mainVol slider
+		if (volSlider.value != currVol) {
+			volSlider.value = currVol
+		};
+		//// inPops:
 		allViews[0].do { |pop, i|
-			var micBusnum = q.pchains[i].proxy.get(\micBus);
+			var micBusnum = q.pchains[i].proxy.get(\micBus).asInteger;
 			if (pop.value != micBusnum) { pop.value = micBusnum };
 		};
-		// proxy:
+		// proxy drag:
 		allViews[1].do { |drag, i|
 			var pc = q.pchains[i];
 			var inProxy = pc.getHalo.src;
@@ -81,7 +117,7 @@ WinBounds.addMake(q.topName, {
 			};
 		};
 
-		// sndfile:
+		// sndfile drag:
 		allViews[2].do { |drag, i|
 			var pch = q.pchains[i];
 			var sfname = pch.getHalo.sfname;
@@ -100,6 +136,12 @@ WinBounds.addMake(q.topName, {
 				playBt.value = pannerPlaying;
 				stopBt.value = 1-pannerPlaying;
 			};
+		};
+		//// panPops:
+		allViews[5].do { |pop, i|
+			var currPan = q.pchains[i].getHalo(\panName);
+			var currPanIndex = q.panNames.indexOf(currPan);
+			if (pop.value != currPanIndex) { pop.value = currPanIndex };
 		};
 
 	}, 0.5, { w.isClosed }, \bio);
