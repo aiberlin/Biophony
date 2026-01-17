@@ -21,7 +21,7 @@ X pepsi sndfile (sndfile player)
 
 q = q ? ();
 q.numPmcs = q.numPmcs ? 8;
-q.names = [\ada, \bob, \ccc, \dada, \eek, \fifi, \gogo, \hah, \ivy, \jay, \kiki, \lily, \mimi, \nana, \opo, \qiqo ];
+q.names = [\ada, \bob, \cecilia, \dada, \eek, \fifi, \gogo, \hah, \ivy, \jay, \kiki, \lily, \mimi, \nana, \opo, \qiqo, \roro, \sisu, \tata, \ubu, \vovo, \wawa, \xoxo, \yoyo, \zazie ];
 q.pcNames = q.numPmcs.collect { |i| ("ch" ++ (i+1) ++ q.names[i]).asSymbol };
 q.pannerNames = q.pcNames.collect { |name| name.asString.insert(2, "P").asSymbol };
 
@@ -271,6 +271,14 @@ q.pchains.do { |pc, i|
 	};
 };
 );
+
+// put them in ndef groups
+// a dict for all ndef info
+q.ndef = q.ndef ? ();
+// make several groups
+q.ndef.groups = q.ndef.groups ? ();
+q.ndef.groups.put(\ntssChan, q.pchains.collect(_.proxy));
+q.ndef.groups.put(\ntssPan, q.pchains.collect(_.getHalo(\panner)));
 
 MFdef(\setSndfile).add(\setFile, { |pc, pathOrSF|
 	var sfname;
