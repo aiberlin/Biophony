@@ -156,7 +156,7 @@ Spec.add(\delaytime, [0.01, 10, \exp]);
 Spec.add(\loop, \unipolar);
 
 // make them dynamically overwriteable later in code!
-q.inNames = [
+q.inNames = q.inNames ? [
 	\kiteMic, \richtMic, \funkMic1,\funkMic2,
 	\micA_innen, \micB_innen, \micC_innen,
 	\stringGang, \stringWind,
@@ -204,7 +204,9 @@ Butz(\NTSS).add(\SpatioScope, { WinBounds.showOrMake(\SpatioScope) });
 Butz(\NTSS).add(\NdefMixer, { WinBounds.showOrMake(\NdefMixer) });
 Butz(\NTSS).add(\Levels, { WinBounds.showOrMake(\Levels) });
 Butz(\NTSS).add(\MainFX, { WinBounds.showOrMake(\MainFX) });
-
+// put all ndefs that can be sources to an NTSS channel
+// on one window as dragsources.
+Butz(\NTSS).add(\allSrcNdefs, { WinBounds.showOrMake(\allSrcNdefs) });
 
 "NdefMixer.scd".postcs.loadRelative;
 
@@ -232,6 +234,30 @@ WinBounds.addMake(\SpatioScope, {
 	};
 	q.spat.parent.moveTo(120, 480);
 	q.spat.parent
+});
+
+// get all desired source Ndefs :
+// everything audio except the chains and panners,
+q.ntss.getSrcNdefs = {
+	var sources = Ndef.all[s.name].envir.asArray;
+	sources = sources.select { |px| px.rate == \audio };
+	q.pchains.do { |chain|
+		sources.remove(chain.proxy);
+	};
+	q.pchains.do { |chain|
+		sources.remove(chain.getHalo(\panner));
+	};
+	sources.sort { |a, b| a.key < b.key };
+};
+
+WinBounds.addMake(\allSrcNdefs, {
+	w = Window("allSrcNdefs", Rect(500, 13.0, 400.0, 400.0)).front;
+	w.background_(Color.grey);
+	w.view.layout = GridLayout.rows(
+		*q.ntss.getSrcNdefs.collect { |ndef|
+			DragSource(w).object_(ndef) }.clump(4)
+	);
+	w;
 });
 
 
