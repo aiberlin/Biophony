@@ -10,48 +10,64 @@ adds a window for dragsources for NTMI processes,
 so one can drag them to NTSS channels.
 
 ***/
+//// some things to set before loading anything:
 
 // I want that sampleRate:
 s.options.sampleRate = 48000;
 
-
+//
 q = q ? ();
+q.ntss = q.ntss ? ();
+// special ntss settings would go here...
 
-// now load NTSS, which boots server
-// adjust path to where you have it
+
+// first load NTSS, which boots server.
+// adjust path to where you have it:
 "~/src/aiberlin/Biophony/00_loadMe_NTSS.scd".standardizePath.loadPaths;
 
+// tell ntss what to do when loaded:
 q.ntss.finalSetup = {
 	// wait a bit
 	0.1.wait;
 
-	// then load NTMI, with special settings:
-	NTMI.reboot = false;
-	NTMI.usesMainFX = false;
+	// prepare groups for switchable NdefMixer:
+	q.ndef.groupNames = [\ntssChan, \ntssPan, \NTMI];
+	q.ndef.groups.put(\NTMI, NTMI.processes);
+
 	MainFX(s).proxy.set(\mainvol, 0.25);
 
+	// then load NTMI, with some special settings:
+	NTMI.reboot = false;
+	NTMI.usesMainFX = false;
+
 	NTMI.run;
+
+	// tell NTMI what to do when done:
 	NTMI.finalSetup = {
 		//make sure the NTMI sounds play directly:
 		NTMI.processes.do(_.set(\amp, 0.25));
-		q.ndef.groups.postcs;
-
-		// prepare groups for new NdefMixer:
-		q.ndef.groupNames = [\ntssChan, \ntssPan, \NTMI];
+		q.ndef.groups.keys.postcs;
 		q.ndef.groups.put(\NTMI, NTMI.processes);
 
-		WinBounds.addMake(\allNdefs, {
-			w = Window("ndefs").front;
-			w.view.layout = GridLayout.rows(
-				*NTMI.processes.collect { |ndef|
-					DragSource(w).object_(ndef) }.clump(4)
-			);
-		});
+		q.ndef.groups.keys;
 
-		Butz(\NTMI).remove(\miniNTMI);
-		Butz(\NTMI).add(\allNdefs, { WinBounds.showOrMake(\allNdefs) });
-		Butz(\NTMI).actions.replace(\ndefMixer, Butz(\top).actions.at(\NdefMixer));
+		// for choosing Ndefs as NTSS sources,
+		// get these from NTMI:
+		q.ntss.getSrcNdefs = {
+			NTMI.slots.zz ++
+			NTMI.ndefs ++
+			NTMI.processes.copy.removeAll(NTMI.ndefs);
+		};
 
+		// finetune Butzes
+		Butz(\NTMI).remove(\miniNTMI); // not fully working
+		Butz(\NTMI).add(\allSrcNdefs, { WinBounds.showOrMake(\allSrcNdefs) });
+		// redirect to new flexible NdefMixer
+		Butz(\NTMI).add(\ndefMixer, { WinBounds.showOrMake(\NdefMixer) });
+		// redirect to general MainFX
+		Butz(\NTMI).add(\mainFX, { WinBounds.showOrMake(\MainFX) });
+
+		// end with NTSS Butz and N_T_S_S window in front
 		Butz.curr = \NTSS;
 		Butz.run(\N_T_S_S);
 	};
