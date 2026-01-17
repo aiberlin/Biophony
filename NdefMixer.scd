@@ -29,19 +29,20 @@ MFdef('mixBut').add(\mixBut, { |bt, mod = 0|
 	if (group.isNil) {
 		"*** q.ndef group % not found!\n".postf(name.cs);
 	} {
-	case { mod.isAlt } {
-		"*** ndefmix shows only: %\n".postf(name.cs);
-		q.ndef.mixspace.envir.clear;
-		group.do { |ndef| q.ndef.mixspace.envir.put(ndef.key, ndef) };
-		q.mixbuts.do(_.value_(0));
-		bt.value = 1;
-	} { bt.value > 0 } {
-		"ndefmix adding: %\n".postf(name.cs);
-		group.do { |ndef| q.ndef.mixspace.envir.put(ndef.key, ndef) };
-	} {
-		"ndefmix removing: %\n".postf(name.cs);
-		group.do { |ndef| q.ndef.mixspace.envir.removeAt(ndef.key) };
-	}
+		case { mod.isAlt } {
+			"*** ndefmix shows only: %\n".postf(name.cs);
+			q.ndef.mixspace.envir.clear;
+			group.do { |ndef| q.ndef.mixspace.envir.put(ndef.key, ndef) };
+			q.ndef.mixbuts.do(_.value_(0));
+			bt.value = 1;
+
+		} { bt.value > 0 } {
+			"ndefmix adding: %\n".postf(name.cs);
+			group.do { |ndef| q.ndef.mixspace.envir.put(ndef.key, ndef) };
+		} {
+			"ndefmix removing: %\n".postf(name.cs);
+			group.do { |ndef| q.ndef.mixspace.envir.removeAt(ndef.key) };
+		}
 	}
 });
 
@@ -58,7 +59,7 @@ WinBounds.addMake(\NdefMixer, {
 		.states_([[ name, Color.white, Color.grey ], [ name, Color.white, Color.red(0.8) ]])
 		.action_(MFdef('mixBut'));
 	};
-	q.ndef.mixer = ProxyMixer.small(q.ndef.mixspace, 24, q.ndef.mixwin);
+	q.ndef.mixer = ProxyMixer(q.ndef.mixspace, 24, q.ndef.mixwin);
 	q.ndef.mixer.arGuis.do(q.tuneNameView(_));
 	ProxyMeter.addMixer(q.ndef.mixer);
 	ProxyMeter.hideKrs;
