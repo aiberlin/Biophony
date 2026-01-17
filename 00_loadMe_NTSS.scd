@@ -6,6 +6,8 @@ Then we can throw out all Biophony-only code here.
 StartupFile.writeStartupFileToExternalPath('NTSS2', thisProcess.nowExecutingPath);
 StartupFile.writeRedirectFile('NTSS2');
 StartupFile.dialog;
+
+ServerOptions.devices.cs
 */
 
 //XConnect(\gencomp);
@@ -13,16 +15,18 @@ StartupFile.dialog;
 q = q ? ();
 
 q.ntss = q.ntss ? ();
+q.ntss.ready = false;
 q.topName = \N_T_S_S;
 
-s.options.device = "X-USB Multichannel"; // Behringer 1820 in room 111
+s.options.device = "X-USB Multichannel"; // Behringer X-32 mixer on linux?
+s.options.device = "X-USB"; // Behringer X-32 mixer in macOS
 s.options.numInputBusChannels = 30;
 s.options.memSize = 8192 * 32; // boost to 256MB for delaylines
 s.options.numAudioBusChannels = 2048;
 s.options.maxNodes = 4096;
 s.options.numWireBufs = 512;
 s.options.hardwareBufferSize = 256;
-s.options.sampleRate = 44100;
+s.options.sampleRate = s.options.sampleRate ? 44100;
 
 
 /*
@@ -151,7 +155,7 @@ Spec.add(\delaytime, [0.01, 10, \exp]);
 
 Spec.add(\loop, \unipolar);
 
-// make them dynamicall7 overwriteable later in code!
+// make them dynamically overwriteable later in code!
 q.inNames = [
 	\kiteMic, \richtMic, \funkMic1,\funkMic2,
 	\micA_innen, \micB_innen, \micC_innen,
@@ -209,7 +213,7 @@ Butz.add(\Levels, { WinBounds.showOrMake(\Levels) });
 "NdefMixer.scd".postcs.loadRelative;
 
 WinBounds.addMake(\Levels, {
-	var meter = s.meter.dump;
+	var meter = s.meter.window;
 	var win = meter.window.name_("Levels").moveTo(0,0);
 });
 
@@ -228,14 +232,10 @@ WinBounds.addMake(\SpatioScope, {
 
 WinBounds.stored.putAll( (
 	N_T_S_S: Rect(520, Window.availableBounds.height - 430, 900, 450),
-	AUTOPILOT: Rect(124.0, 256.0, 274.0, 126.0),
 	SpatioScope: Rect(120, 540, 500, 500),
 	NdefMixer: Rect(120, 300, 1086.0, 500),
 	Levels: Rect(0, 0, 58 + (~numIOchans * 38), 230.0),
-	LevelControl: Rect(128.0, 36.0, 610.0, 270.0),
 	MainFX: Rect(803.0, 642.0, 500, 560),
-	geoPlaya: Rect(512.0, 516.0, 400.0, 400.0),
-	KeyPlayer: Rect(127.0, 300.0, 434.0, 338.0),
 ) );
 
 s.waitForBoot {
@@ -278,32 +278,21 @@ s.waitForBoot {
 
 	0.2.wait;
 
-	if (~hideChanNdefs) {
-		q.pcNames.do { |pcKey| Ndef.all.localhost.removeAt(pcKey) };
-	};
-
 	"chanPanGuis.scd".postcs.loadRelative;
-
-//	"beatstep.scd".postcs.loadRelative;
+	"TopWindow.scd".postcs.resolveRelative.loadPaths;
 
 	// ("audio buses top: " + s.audioBusAllocator.top).postcs;
 	// ("bufs top: " + s.bufferAllocator.top).postcs;
 
-	0.5.wait;
-	"TopWindow.scd".postcs.resolveRelative.loadPaths;
-	Butz.run(\Biophonium);
-
-	Butz.run('chain1');
 	0.1.wait;
 
 	// "autopilot.scd".postcs.loadRelative;
 	Butz.run('SpatioScope');
-	Butz.run('AUTOPILOT');
-	Butz.run('BIOPHONIUM');
+	Butz.run(q.topName);
 
-	1.wait;
-
-	//Tdef(\AUTOPILOT).play;
+	0.2.wait;
 
 	WinBounds.restoreAll;
+	q.ntss.ready = true;
+	q.ntss.finalSetup;
 };
