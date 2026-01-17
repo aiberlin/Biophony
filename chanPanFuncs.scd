@@ -15,6 +15,8 @@ Ndef(\pan1).gui;
 
 */
 
+/// BIOPHONY Panners: //////
+
 q.panNames = [ \panFixed, \panRoto, \panFeed];
 
 
@@ -112,6 +114,8 @@ ProxyChain.add3(\panFeed, { |srcBus, srcPos = 0, srcWidth = 0,
 		[ inside, shakers, outside, bigPA ].collect(_.lag(1)))
 	.flop.flat;
 });
+
+/// NTSS Panners: //////
 
 q.ntss = q.ntss ? ();
 q.ntss.spat = q.ntss.spat ? ();
