@@ -53,6 +53,7 @@ MFdef(\updatePchWin).(q.pchains[2]);
 */
 );
 
+
 (
 q.pchains.do { |pch, i|
 	Butz(\NTSS).add(pch.key, { WinBounds.showOrMake(pch.key) });
@@ -93,10 +94,10 @@ q.pchains.do { |pch, i|
 		pch.addHalo(\sfDrag, sfDrag);
 
 		pxDrag.receiveDragHandler = { arg v;
-			var rawdrag = View.currentDrag.postcs;
-			// support dragged code - string objects
-			var drag = if (rawdrag.isString) { rawdrag.interpret } { rawdrag };
+			var drag = View.currentDrag.postcs;
+			// MFdef setSrc accepts proxy, proxychain, or string
 			MFdef(\setSrc).(pch, drag);
+			MFdef(\updatepchhWin).(pch);
 		};
 
 

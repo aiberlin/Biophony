@@ -46,12 +46,12 @@ WinBounds.addMake(q.topName, {
 		ProxyMeter.addMonitorGui(moni);
 
 		proxyDrag.receiveDragHandler = { arg v;
-			var rawdrag = View.currentDrag.postcs;
-			// support dragged code - string objects
-			var drag = if (rawdrag.isString) { rawdrag.interpret } { rawdrag };
+			var drag = View.currentDrag.postcs;
+			// MFdef setSrc accepts proxy, proxychain, or string
 			MFdef(\setSrc).(pch, drag);
-			MFdef(\updatePchWin).(pch);
+			MFdef(\updatepchhWin).(pch);
 		};
+
 		proxyDrag.action = { |drag|  "clicked".postln };
 
 		sfDrag.receiveDragHandler = { arg v;

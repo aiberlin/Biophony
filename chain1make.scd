@@ -296,26 +296,39 @@ MFdef(\setSndfile).add(\setFile, { |pc, pathOrSF|
 	};
 });
 /*
-MFdef(\setSndfile).(ProxyChain(\ch1), q.bio.sndfiles.choose.path);
+MFdef(\setSndfile).(q.pchains[0], q.bio.sndfiles.choose.path);
+
 */
 
 MFdef(\setSrc).add(\setSrc, { |pc, drag|
-	var name = drag.key;
-	var  proxy = drag;
-	if (drag.isKindOf(ProxyChain)) {  proxy = drag.proxy };
-	if (proxy.rate == \audio) {
-		pc.addHalo(\src, drag);
-		pc.postln.getHalo.postln;
-		pc.set(\proxyBus, proxy.index);
-		proxy
+	// drag should be a nodeproxy, or a string of a NodeProxy
+	var proxy, name;
+	case { drag.isKindOf(String) } {
+		drag = try { drag.interpret };
+	} { drag.isKindOf(ProxyChain) } {
+		proxy = drag.proxy
+	} { drag.isKindOf(NodeProxy).not } {
+		"*** % : drag % is not a valid source!\n".postf(pc, drag.cs);
+		"Must be an Ndef or ProxyChain!".postln;
 	} {
-		"*** % is not an ar proxy!\n".postf(drag);
-		nil
+		proxy = drag;
+		if (proxy.rate != \audio) {
+			"*** % is not an ar proxy!\n".postf(proxy);
+			nil
+		}{
+			pc.addHalo(\src, drag);
+			pc.postln.getHalo.postln;
+			pc.set(\proxyBus, proxy.index);
+			proxy
+		}
 	}
 });
 
 /*
-MFdef(\setSrc).(ProxyChain(\ch1), Ndef(\geoLive));
+MFdef(\setSrc).(q.pchains[0]);
+MFdef(\setSrc).(q.pchains[0], \x);
+MFdef(\setSrc).(q.pchains[0], Ndef(\x));
+MFdef(\setSrc).(q.pchains[0], Ndef(\x, { Dust2.ar(30, 0.3) }));
 */
 
 
