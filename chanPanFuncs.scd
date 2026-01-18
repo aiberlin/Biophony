@@ -201,11 +201,13 @@ q.ntss.spat.mixer = { arg name, speakers, snd;
 
 q.ntss.spat.taps = { arg name, speakers, snd;
 	var nspeakers = speakers.size;
+	var dryKr = \dry.kr(1, 1, spec:\amp);
+	var sendKr = \send.kr(1, 1, spec:\amp);
 	var taps = nspeakers.collect {|idx|
 		"%_tap_%".format(name, idx).asSymbol.kr(0, spec:[0,4])
 	};
 	//(snd*\dry.kr(1, spec:\amp)) + CombC.ar(snd * \send.kr(0, spec:\amp), 4, taps, 6);
-	(snd*\dry.kr(1, spec:\amp)) + CombC.ar(snd * \send.kr(0, spec:\amp), 4, taps, 0);
+	(snd*dryKr) + CombC.ar(snd * sendKr, 4, taps, 0);
 };
 
 /*** multitap comb filters on each speaker, with feedback
@@ -213,14 +215,18 @@ q.ntss.spat.taps = { arg name, speakers, snd;
 ***/
 q.ntss.spat.tapsfb = { arg name, speakers, snd;
 	var nspeakers = speakers.size;
+	var dryKr = \dry.kr(1, 1, spec:\amp);
+	var sendKr = \send.kr(1, 1, spec:\amp);
+	var fbKr = \fb.kr(0, spec:\amp);
+
 	var fb = LocalIn.ar(nspeakers);
 	var taps = nspeakers.collect {|idx|
 		"%_tap_%".format(name, idx).asSymbol.kr(0, spec:[0,4])
 	};
-	var delayline = DelayC.ar(snd * \send.kr(0, spec:\amp) + fb, 4, taps);
+	var delayline = DelayC.ar(snd * sendKr + fb, 4, taps);
 	delayline = PitchShift.ar(delayline, 0.2, {rrand(1.01,0.99)}!nspeakers);
-	LocalOut.ar(delayline * \fb.kr(0, spec:\amp));
-	(snd*\dry.kr(1, spec:\amp)) + delayline;
+	LocalOut.ar(delayline * fbKr);
+	(snd * dryKr) + delayline;
 };
 
 
