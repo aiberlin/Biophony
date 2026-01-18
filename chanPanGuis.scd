@@ -53,13 +53,62 @@ MFdef(\updatePchWin).(q.pchains[2]);
 */
 );
 
+// get all desired source Ndefs :
+// everything audio except the chains and panners,
+q.ntss.getSrcNdefs = {
+	var sources = Ndef.all[s.name].envir.asArray;
+	sources = sources.select { |px| px.rate == \audio };
+	q.pchains.do { |chain|
+		sources.remove(chain.proxy);
+	};
+	q.pchains.do { |chain|
+		sources.remove(chain.getHalo(\panner));
+	};
+	sources.sort { |a, b| a.key < b.key };
+};
+
+WinBounds.addMake(\allSrcNdefs, {
+	var w = Window("allSrcNdefs", Rect(500, 13.0, 400.0, 400.0)).front;
+	w.background_(Color.grey);
+	w.view.layout = GridLayout.rows(
+		*q.ntss.getSrcNdefs.collect { |ndef|
+			DragSource(w).object_(ndef) }.clump(4)
+	);
+	w;
+});
+
+/*
+// choose source Ndef for a pchain from buttons:
+MFdef(\allSrcChoose).(q.pchains[0]);
+MFdef(\allSrcChoose).(q.pchains[0], 400@500);
+*/
+MFdef(\allSrcChoose).add(\choose, { |pchain, xy|
+	var w = Window("choose src for % :".format(pchain),
+		Rect(500, 400, 400.0, 400.0)).front;
+
+	w.background_(Color.grey);
+	w.view.layout = GridLayout.rows(
+		*q.ntss.getSrcNdefs.collect { |ndef|
+			Button(w).states_([[ndef.key]])
+			.action_({ MFdef(\setSrc).(pchain, ndef); w.close })
+		}.clump(4)
+	);
+	if (xy.postln.notNil) {
+		var top = Window.availableBounds.height - xy.y - w.bounds.height;
+		w.moveTo(xy.x - 200.postln, top.postln);
+	};
+	w;
+});
 
 (
 q.pchains.do { |pch, i|
 	Butz(\NTSS).add(pch.key, { WinBounds.showOrMake(pch.key) });
 
 	WinBounds.addMake(pch.key, {
-		var w = Window(pch.key, Rect(100 * i + 300, 600, 500, 820)).front;
+		var horizStagger = (Window.screenBounds.width - 200 - 500 / q.pchains.size).round;
+		var vertiStagger = (Window.availableBounds.height - 830 / q.pchains.size).round;
+		var winrect = Rect(horizStagger * i + 200, q.pchains.size - i * vertiStagger, 500, 820);
+		var w = Window(pch.key, winrect.postln).front;
 		var flow = w.addFlowLayout;
 		var font = Font(Font.defaultMonoFace, 14);
 
@@ -76,7 +125,7 @@ q.pchains.do { |pch, i|
 		;
 
 		// dragsink for playing in proxies
-		pxDrag = DragBoth(w, 160@30).align_(\center).font = font;
+		pxDrag = DragBoth(w, 150@30).align_(\center).font = font;
 		if (pch.getHalo(\src).notNil) {
 			pxDrag.object = pch.getHalo(\src);
 		} {
@@ -84,8 +133,15 @@ q.pchains.do { |pch, i|
 		};
 		pch.addHalo(\pxDrag, pxDrag);
 
+		flow.shift(-15, 0);
+		Button(w, 30@30).alpha_(0.7).states_([["?"]]).font_(font)
+		.action_{ |b|
+			var where = b.absoluteBounds.center + (0 @ (b.bounds.height * 0.5));
+			MFdef(\allSrcChoose).(pch, where)
+		};
+
 		// dragsink for dropping in soundfiles into buffer
-		sfDrag = DragBoth(w, 160@30).align_(\center).font = font;
+		sfDrag = DragBoth(w, 150@30).align_(\center).font = font;
 		if (pch.getHalo(\sfname).notNil) {
 			sfDrag.string = pch.getHalo(\sfname);
 		} {
@@ -109,7 +165,7 @@ q.pchains.do { |pch, i|
 			MFdef(\updatepchhWin).(pch);
 		};
 
-		pchgui = ProxyChainGui(pch, 24, w);
+		pchgui = ProxyChainGui(pch, 18, w);
 		pchgui.editGui.paramGui.paramViews[(0..2)].do(_.enabled_(false));
 		q.tuneNameView(pchgui.editGui);
 		pchgui.buttons.first.enabled_(false);
@@ -120,7 +176,7 @@ q.pchains.do { |pch, i|
 		defer ({ pchgui.buttons[0].valueAction_(1) }, 0.25);
 
 		panbuts = q.panNames.collect { |panName, i|
-			Button(w, Rect(0, 0, 480 / q.panNames.size, 30)).font_(f)
+			Button(w, Rect(0, 0, 450 / q.panNames.size, 30)).font_(f)
 			.states_([
 				[ panName ],
 				[ panName, Color.black, Color.green ]
@@ -135,7 +191,7 @@ q.pchains.do { |pch, i|
 		};
 		pch.addHalo(\panbuts, panbuts);
 
-		pannerGui = NdefGui(pch.getHalo(\panner).postln, 16, w, 490@250);
+		pannerGui = NdefGui(pch.getHalo(\panner), 18, w, 490@250);
 		pannerGui.paramGui.paramViews[0].enabled_(false);
 		q.tuneNameView(pannerGui);
 		ProxyMeter.addNdefGui(pannerGui);

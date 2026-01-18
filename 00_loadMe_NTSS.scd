@@ -236,31 +236,6 @@ WinBounds.addMake(\SpatioScope, {
 	q.spat.parent
 });
 
-// get all desired source Ndefs :
-// everything audio except the chains and panners,
-q.ntss.getSrcNdefs = {
-	var sources = Ndef.all[s.name].envir.asArray;
-	sources = sources.select { |px| px.rate == \audio };
-	q.pchains.do { |chain|
-		sources.remove(chain.proxy);
-	};
-	q.pchains.do { |chain|
-		sources.remove(chain.getHalo(\panner));
-	};
-	sources.sort { |a, b| a.key < b.key };
-};
-
-WinBounds.addMake(\allSrcNdefs, {
-	w = Window("allSrcNdefs", Rect(500, 13.0, 400.0, 400.0)).front;
-	w.background_(Color.grey);
-	w.view.layout = GridLayout.rows(
-		*q.ntss.getSrcNdefs.collect { |ndef|
-			DragSource(w).object_(ndef) }.clump(4)
-	);
-	w;
-});
-
-
 WinBounds.stored.putAll( (
 	N_T_S_S: Rect(520, Window.availableBounds.height - 430, 900, 450),
 	SpatioScope: Rect(120, 540, 500, 500),
