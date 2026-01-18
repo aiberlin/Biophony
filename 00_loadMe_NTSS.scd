@@ -32,8 +32,10 @@ Platform.case(
 // dont overwrite if already set
 s.options.device = s.options.device ? q.defaultDeviceName;
 s.options.sampleRate = s.options.sampleRate ? 44100;
-s.options.numInputBusChannels =  s.options.numInputBusChannels  ? 30;
-s.options.numOutputBusChannels = s.options.numOutputBusChannels ? 32;
+
+// hardcode these for 111
+s.options.numInputBusChannels =  30;
+s.options.numOutputBusChannels = 32;
 
 // need these
 s.options.memSize = 8192 * 32; // boost to 256MB for delaylines
@@ -143,7 +145,8 @@ q.ntss.speakers = q.ntss.speakersActive.collect {|key|
 q.ntss.amp_names = q.ntss.speakersActive;
 
 q.numPmcs = 16;
-
+q.numSpeakersTotal = q.ntss.speakersOrder.size;
+q.numSpeakersActive = q.ntss.speakersActive.size;
 
 // general specs for everything
 Spec.add(\amp4, [0, 4, \amp]);
@@ -260,12 +263,7 @@ WinBounds.stored.putAll( (
 s.waitForBoot {
 	Butz.numButz_(24).show;
 
-	0.5.wait;
-	"MainFX.scd".postcs.resolveRelative.loadPaths;
-
-	s.volume = -12;
-
-	// not sure these are used in NTSS:
+	// used in MainFX also in NTSS:
 	"make q.buses".postln;
 	q.bus_inside  = Bus.audio(s, 5);
 	q.bus_outside = Bus.audio(s, 5);
@@ -279,20 +277,25 @@ s.waitForBoot {
 		q.bus_bigPA,
 	];
 
-	// make some mono sources first:
-	// try { "geo/geophoneReceiver.scd".postcs.loadRelative };
-	// try { "geo/geoSim.scd".postcs.loadRelative };
+	0.5.wait;
+	"MainFX.scd".postcs.resolveRelative.loadPaths;
 
-	// play on all single channels
-	// "one-shot-sampler.scd".postcs.loadRelative;
-
-	// and others ...
+	s.volume = -12;
 
 	// get biophony and ntss panner functions
 	"chanPanFuncs.scd".postcs.loadRelative;
 
 	// make the proxy chains
 	"chain1make.scd".postcs.loadRelative;
+
+	// use choose panning algorithm randomly
+	// and randomize starting values
+	q.pchains.do { |pc, i|
+		MFdef(\setPanner).(pc, q.panNames.size.rand);
+		MFdef(\randPanPars).(pc, 0.2);
+	};
+
+	s.sync; 0.2.wait; "s.synced.".postln;
 
 	0.2.wait;
 
