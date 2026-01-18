@@ -155,7 +155,10 @@ Spec.add(\delaytime, [0.01, 10, \exp]);
 
 Spec.add(\loop, \unipolar);
 
-// make them dynamically overwriteable later in code!
+
+
+// names for the hardware mic/line inputs;
+// can be set before loading NTSS, or later in code!
 q.inNames = q.inNames ? [
 	\kiteMic, \richtMic, \funkMic1,\funkMic2,
 	\micA_innen, \micB_innen, \micC_innen,
@@ -166,6 +169,7 @@ q.inNames = q.inNames ? [
 	\hydroWheel, \hydroFount,
 	\angel, \arianeFunk
 ].collect { |name, i| ((i+1).asString ++ name).asSymbol }.postcs;
+
 
 
 // make nameViews better readable
@@ -186,6 +190,8 @@ q.tuneNameView = { |q, obj|
 g = NdefGui(Ndef(\x));
 q.tuneNameView(g);
 */
+
+
 
 // General GUIs
 
@@ -237,7 +243,7 @@ WinBounds.addMake(\SpatioScope, {
 });
 
 WinBounds.stored.putAll( (
-	N_T_S_S: Rect(520, Window.availableBounds.height - 430, 900, 450),
+	N_T_S_S: Rect(520, Window.availableBounds.height - 430, 900, 510),
 	SpatioScope: Rect(120, 540, 500, 500),
 	NdefMixer: Rect(120, 300, 1086.0, 500),
 	Levels: Rect(0, 0, 58 + (~numIOchans * 38), 230.0),

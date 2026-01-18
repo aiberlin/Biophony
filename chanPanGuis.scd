@@ -68,7 +68,7 @@ q.ntss.getSrcNdefs = {
 };
 
 WinBounds.addMake(\allSrcNdefs, {
-	var w = Window("allSrcNdefs", Rect(500, 13.0, 400.0, 400.0)).front;
+	var w = Window("allSrcNdefs", Rect(595.0, 360.0, 400.0, 400.0)).front;
 	w.background_(Color.grey);
 	w.view.layout = GridLayout.rows(
 		*q.ntss.getSrcNdefs.collect { |ndef|

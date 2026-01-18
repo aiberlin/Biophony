@@ -6,7 +6,7 @@ WinBounds.addMake(q.topName, {
 
 	var f = Font("Monaco", 18);
 	var f2 = Font("Monaco", 14);
-	var w = Window(q.topName, Rect(520, Window.availableBounds.height - 500, 900, 450)).front;
+	var w = Window(q.topName, Rect(520, Window.availableBounds.height - 500, 900, 510)).front;
 	var allViews, leftCol, volSlider;
 	w.alpha = 0.8;
 	w.addFlowLayout;
@@ -22,24 +22,22 @@ WinBounds.addMake(q.topName, {
 	layout: \vert
 	);
 
+	Button(leftCol, 60@60).font_(f2).states_([["Src\nNdefs"]])
+	.action_({ WinBounds.showOrMake('allSrcNdefs'); });
+
 	Button(leftCol, 60@30).font_(f)
 	.states_([["MORE"], ["LESS"]])
 	.action_({
 		var bounds = w.bounds;
-		var isBig = bounds.height > 670;
-		bounds.height = if (isBig, 450, 900);
+		var isBig = bounds.height > 700;
+		bounds.height = if (isBig, 510, 900);
 		w.bounds = bounds;
-	});
-
-	Button(leftCol, 60@60).font_(f2).states_([["Src\nNdefs"]])
-	.action_({
-		WinBounds.showOrMake('allSrcNdefs');
 	});
 
 	allViews = q.pchains.collect { |pch, i|
 		var name = pch.key;
 		var panna = pch.getHalo.panner;
-		var widCol = w.bounds.width - 100 / 8.2, hi = w.bounds.height - 10;
+		var widCol = w.bounds.width - 100 / 8.2, hi = w.bounds.height - 60;
 		var wid = widCol - 4;
 		var comp = CompositeView(w, widCol@hi).background_(Color.hsv(i / 8, 1, 1));
 		var flow = comp.addFlowLayout(0@0, 0@0);
@@ -81,8 +79,8 @@ WinBounds.addMake(q.topName, {
 			MFdef(\setSrc).(pch, drag);
 			MFdef(\updatePchWin).(pch);
 		};
-
-		proxyDrag.action = { |drag|  "clicked".postln };
+		// triggered when selected and return key pressed
+		proxyDrag.action = { |drag|  "proxyDrag action".postln };
 
 		sfDrag.receiveDragHandler = { arg v;
 			var path = View.currentDrag.postln;
