@@ -100,7 +100,7 @@ ProxyChain.add3(\panFeed, { |srcBus, srcPos = 0, srcWidth = 0,
 
 	////// better rotate with PanAz:
 	var rotated = delays.collect { |chan, i|
-		var rotatedpos = i + rotate * (2 / ~num);
+		var rotatedpos = i + rotate * (2 / q.ntss.speakersOrder.size);
 		PanAz.ar(5, chan, rotatedpos, 1, 2, 0);
 	}.sum;
 

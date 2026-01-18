@@ -29,7 +29,7 @@ q.feedPans = q.feedNames.collect { |name, i|
 
 		////// better rotate with PanAz:
 		var rotated = delays.collect { |chan, i|
-			var rotatedpos = i + rotate * (2 / ~num);
+			var rotatedpos = i + rotate * (2 / q.numSpeakersActive);
 			PanAz.ar(5, chan, rotatedpos, 1, 2, 0);
 		}.sum;
 

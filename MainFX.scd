@@ -121,13 +121,13 @@ ProxyChain.add3(\shiftSpeakers, \filter -> {|in|
 			counter = counter + 1;
 		};
 	};
-	// outs.size.postln;
+	outs.size.postln;
 	outs;
 }, 1);
 
 
 MainFX(s).clear;
-MainFX(s, ~num, [\mainMixer, \mix2four, \mix2stereo, \shiftSpeakers]);
+MainFX(s, q.ntss.speakersOrder.size, [\mainMixer, \mix2four, \mix2stereo, \shiftSpeakers]);
 //MainFX(s).add(\levels, 1);
 MainFX(s).add(\mainMixer, 1);
 MainFX(s).add(\shiftSpeakers, 1);
