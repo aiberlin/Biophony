@@ -194,7 +194,6 @@ flRateMod: [-1, 1]
 
 ProxyChain.add3(\reverb, \filterIn -> { |in, revTime = 2, animRate = 0.1, animDepth = 0.3|
 
-
 	AdCVerb2.ar(in.zap.asArray.sum * 0.2,
 		revTime.lag(0.5),
 		animRate.lag(0.5),
@@ -279,6 +278,7 @@ q.ndef = q.ndef ? ();
 q.ndef.groups = q.ndef.groups ? ();
 q.ndef.groups.put(\ntssChan, q.pchains.collect(_.proxy));
 q.ndef.groups.put(\ntssPan, q.pchains.collect(_.getHalo(\panner)));
+q.ndef.groupNames = q.ndef.groupNames ? [\ntssChan, \ntssPan];
 q.ndef.groupNames.postcs;
 
 MFdef(\setSndfile).add(\setFile, { |pc, pathOrSF|
@@ -288,42 +288,43 @@ MFdef(\setSndfile).add(\setFile, { |pc, pathOrSF|
 	};
 	if(pathOrSF.isKindOf(SoundFile).not) {
 		"*** % is not a soundfile!\n".postf(pathOrSF);
-		false
+		nil
 	} { // we have a soundfile
 		sfname = pathOrSF.path.basename.splitext[0].asSymbol;
 		"OK! loading %\n".postf(sfname);
 		pc.getHalo(\mybuf).allocReadChannel(pathOrSF.path, channels: [0]);
 		pc.addHalo(\sfname, sfname);
 		pc.addHalo(\sfpath, pathOrSF);
-		true;
+		pathOrSF;
 	};
 });
-/*
-MFdef(\setSndfile).(q.pchains[0], q.bio.sndfiles.choose.path);
 
+/*
+// q.bio.soundfiles are in biophony
+MFdef(\setSndfile).(q.pchains[0], q.bio.sndfiles.choose.path);
 */
 
 MFdef(\setSrc).add(\setSrc, { |pc, drag|
 	// drag should be a nodeproxy, or a string of a NodeProxy
 	var proxy, name;
-	case { drag.isKindOf(String) } {
-		drag = try { drag.interpret };
-	} { drag.isKindOf(ProxyChain) } {
-		proxy = drag.proxy
-	} { drag.isKindOf(NodeProxy).not } {
-		"*** % : drag % is not a valid source!\n".postf(pc, drag.cs);
-		"Must be an Ndef or ProxyChain!".postln;
-	} {
+	if (drag.isKindOf(String)) { drag = try { drag.interpret } };
+	if (drag.isKindOf(ProxyChain)) { proxy = drag.proxy };
+
+	if (drag.isKindOf(NodeProxy)) {
 		proxy = drag;
 		if (proxy.rate != \audio) {
 			"*** % is not an ar proxy!\n".postf(proxy);
 			nil
 		}{
-			pc.addHalo(\src, drag);
-			pc.postln.getHalo.postln;
+			pc.addHalo(\src, proxy);
+			pc.postln;
 			pc.set(\proxyBus, proxy.index);
-			proxy
+			proxy.wakeUp;
 		}
+	} {
+		"*** % : drag % is not a valid source!\n".postf(pc, drag.cs);
+		"Must be an Ndef or ProxyChain!".postln;
+		nil;
 	}
 });
 
@@ -342,6 +343,7 @@ MFdef(\setPanner).add(\choose, { |pc, panIndex = 0|
 	var newPanSource = ProxyChain.allSources[newPanName];
 	if (newPanSource.isNil) {
 		"no pan source called %!\n".format(newPanName).warn;
+		nil;
 	} {
 		panner.source = newPanSource;
 		pc.addHalo(\panName, newPanName);
@@ -351,10 +353,13 @@ MFdef(\setPanner).add(\choose, { |pc, panIndex = 0|
 		defer ({  panner.cleanNodeMap }, panner.fadeTime + 0.1);
 
 		MFdef(\panButs).(pc, panIndex);
-	}
+		"setPanner: % -> %\n".postf(pc, newPanName);
+		newPanName;
+	};
 });
 /*
-MFdef(\setPanner).(ProxyChain(\ch1), q.panNames.size.rand);
+MFdef(\setPanner).(ProxyChain(\ch1ada), 7.rand);
+MFdef(\setPanner).(q.pchains[0], 7);
 */
 
 MFdef(\randPanPars).add(\rand, { |pc, rand = 0.01|
@@ -366,19 +371,8 @@ MFdef(\randPanPars).add(\rand, { |pc, rand = 0.01|
 });
 
 /*
-MFdef(\randPanPars).(q.pchains[4]);
+MFdef(\randPanPars).(q.pchains[4], 0.1);
 */
-
-// MFdef(\setPanner).(q.pchains[0], 7);
-
-// use choose panning algorithm randomly
-// and randomize starting values
-q.pchains.do { |pc, i|
-	MFdef(\setPanner).(pc, q.panNames.size.rand);
-	MFdef(\randPanPars).(pc, 0.2);
-};
-
-try { s.sync; 0.2.wait; "s.synced.".postln; };
 
 // initialize inputs
 q.pchains.do { |pc, i|
@@ -389,7 +383,6 @@ q.pchains.do { |pc, i|
 	pc.add(\sndfile, 1);
 
 	pc.set(\bufnum, pc.getHalo(\mybuf).bufnum);
-
 
 	// random FX on init?
 	// if (0.5.coin) { pc.add(\freqMod, 1) };

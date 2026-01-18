@@ -37,6 +37,7 @@ MFdef(\updatePchWin).add(\bufPath, { |pch|
 		};
 	}
 });
+
 MFdef(\updatePchWin).add(\panMode, { |pch|
 	var h = pch.getHalo;
 	var panName = h.panName;
@@ -78,7 +79,7 @@ WinBounds.addMake(\allSrcNdefs, {
 });
 
 /*
-// choose source Ndef for a pchain from buttons:
+// choose source Ndef for one pchain from buttons:
 MFdef(\allSrcChoose).(q.pchains[0]);
 MFdef(\allSrcChoose).(q.pchains[0], 400@500);
 */
@@ -100,6 +101,8 @@ MFdef(\allSrcChoose).add(\choose, { |pchain, xy|
 	w;
 });
 
+
+
 (
 q.pchains.do { |pch, i|
 	Butz(\NTSS).add(pch.key, { WinBounds.showOrMake(pch.key) });
@@ -117,7 +120,7 @@ q.pchains.do { |pch, i|
 		// make input selections: audio inputs
 		inputPop = EZPopUpMenu(w, 160@30, \anaIn, q.inNames,
 			{ |pop|
-				pop.item.postln;
+				"%: input %, %\n".postf(pch, pop.value, pop.item);
 				pch.set(\micBus, pop.value);
 			}, labelWidth: 45
 		).font_(font)
@@ -126,15 +129,29 @@ q.pchains.do { |pch, i|
 
 		// dragsink for playing in proxies
 		pxDrag = DragBoth(w, 150@30).align_(\center).font = font;
+		pxDrag.string = "drop a proxy/chain!";
+		pxDrag.receiveDragHandler = { arg v;
+			var drag = View.currentDrag.postcs;
+			if ((drag == v.object).not) {
+				// MFdef setSrc accepts proxy, proxychain, or string
+				if (MFdef(\setSrc).(pch, drag).notNil) {
+					MFdef(\updatepchWin).(pch)
+				}
+			};
+		};
+		// when select, on keypress
+		pxDrag.action = { |b|
+			var where = b.absoluteBounds.center + (0 @ (b.bounds.height * 0.5));
+			MFdef(\allSrcChoose).(pch, where)
+		};
+
+		pch.addHalo(\pxDrag, pxDrag);
 		if (pch.getHalo(\src).notNil) {
 			pxDrag.object = pch.getHalo(\src);
-		} {
-			pxDrag.string = "drop a proxy/chain!";
 		};
-		pch.addHalo(\pxDrag, pxDrag);
 
 		flow.shift(-15, 0);
-		Button(w, 30@30).alpha_(0.7).states_([["?"]]).font_(font)
+		Button(w, 20@30).alpha_(0.7).states_([["?"]]).font_(font)
 		.action_{ |b|
 			var where = b.absoluteBounds.center + (0 @ (b.bounds.height * 0.5));
 			MFdef(\allSrcChoose).(pch, where)
@@ -149,12 +166,17 @@ q.pchains.do { |pch, i|
 		};
 		pch.addHalo(\sfDrag, sfDrag);
 
-		pxDrag.receiveDragHandler = { arg v;
-			var drag = View.currentDrag.postcs;
-			// MFdef setSrc accepts proxy, proxychain, or string
-			MFdef(\setSrc).(pch, drag);
-			MFdef(\updatepchhWin).(pch);
+		flow.shift(-15, 0);
+		Button(w, 20@30).alpha_(0.7).states_([["?"]]).font_(font)
+		.action_{ |b|
+			Dialog.openPanel({ |path|
+				if (MFdef(\setSndfile).(pch, path)[0]) {
+					sfDrag.object = pch.getHalo.sfpath;
+					sfDrag.string = pch.getHalo.sfname;
+				};
+			});
 		};
+
 
 		sfDrag.receiveDragHandler = { arg v;
 			var path = View.currentDrag.postln;
@@ -162,7 +184,7 @@ q.pchains.do { |pch, i|
 				v.object = pch.getHalo.sfpath;
 				v.string = pch.getHalo.sfname;
 			};
-			MFdef(\updatepchhWin).(pch);
+			MFdef(\updatepchWin).(pch);
 		};
 
 		pchgui = ProxyChainGui(pch, 18, w);
@@ -184,7 +206,6 @@ q.pchains.do { |pch, i|
 			.value_((pch.getHalo.panName == panName).binaryValue)
 			.action = { |bt|
 				if (bt.value == 1) {
-					"switch to %\n".postf(panName);
 					MFdef(\setPanner).(pch, i);
 				}
 			}

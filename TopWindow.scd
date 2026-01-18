@@ -45,7 +45,7 @@ WinBounds.addMake(q.topName, {
 		.action = { Butz(\NTSS).run(name) };
 
 		var inPop = EZPopUpMenu(comp, wid@30, nil, q.inNames, { |pop|
-			pop.item.postln;
+			"%: input %, %\n".postf(pch, pop.value, pop.item);
 			pch.set(\micBus, pop.value);
 		}).font_(f2);
 
@@ -76,15 +76,15 @@ WinBounds.addMake(q.topName, {
 		proxyDrag.receiveDragHandler = { arg v;
 			var drag = View.currentDrag.postcs;
 			// MFdef setSrc accepts proxy, proxychain, or string
-			MFdef(\setSrc).(pch, drag);
-			MFdef(\updatePchWin).(pch);
+			var ok = MFdef(\setSrc).(pch, drag)[0].notNil;
+			if (ok) { MFdef(\updatePchWin).(pch) };
 		};
 		// triggered when selected and return key pressed
 		proxyDrag.action = { |drag|  "proxyDrag action".postln };
 
 		sfDrag.receiveDragHandler = { arg v;
 			var path = View.currentDrag.postln;
-			if (MFdef(\setSndfile).(pch, path)[0]) {
+			if (MFdef(\setSndfile).(pch, path)[0].notNil) {
 				v.object = pch.getHalo.sfpath;
 				v.string = pch.getHalo.sfname;
 			};
