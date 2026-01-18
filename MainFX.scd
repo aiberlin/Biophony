@@ -132,7 +132,7 @@ MainFX(s, q.ntss.speakersOrder.size, [\mainMixer, \mix2four, \mix2stereo, \shift
 MainFX(s).add(\mainMixer, 1);
 MainFX(s).add(\shiftSpeakers, 1);
 WinBounds.addMake(\MainFX, {
-	var mg = MainFXGui(MainFX(s), 64);
+	var mg = MainFXGui(MainFX(s), 32);
 	mg.editGui.paramGui.paramViews[0].enabled_(false);
 	mg.parent.name_(\MainFX);
 });
