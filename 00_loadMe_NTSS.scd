@@ -8,25 +8,39 @@ StartupFile.writeRedirectFile('NTSS2');
 StartupFile.dialog;
 
 ServerOptions.devices.cs
+
 */
 
-//XConnect(\gencomp);
-
+// general things:
 q = q ? ();
 
 q.ntss = q.ntss ? ();
 q.ntss.ready = false;
 q.topName = \N_T_S_S;
 
-s.options.device = "X-USB Multichannel"; // Behringer X-32 mixer on linux?
-s.options.device = "X-USB"; // Behringer X-32 mixer in macOS
-s.options.numInputBusChannels = 30;
+// server config for 111:
+
+// Behringer X-32 mixer shows up differently on linux and macOS
+Platform.case(
+	// X-32 mixer on linux
+	\linux, { q.defaultDeviceName = "X-USB Multichannel"; },
+	// X-32 mixer in macOS
+	\osx, { q.defaultDeviceName = "X-USB"; },
+	// not tested yet!
+	\windows,   { "X-USB".postln }
+);
+// dont overwrite if already set
+s.options.device = s.options.device ? q.defaultDeviceName;
+s.options.sampleRate = s.options.sampleRate ? 44100;
+s.options.numInputBusChannels =  s.options.numInputBusChannels  ? 30;
+s.options.numOutputBusChannels = s.options.numOutputBusChannels ? 32;
+
+// need these
 s.options.memSize = 8192 * 32; // boost to 256MB for delaylines
 s.options.numAudioBusChannels = 2048;
 s.options.maxNodes = 4096;
 s.options.numWireBufs = 512;
 s.options.hardwareBufferSize = 256;
-s.options.sampleRate = s.options.sampleRate ? 44100;
 
 
 /*
@@ -36,6 +50,7 @@ q.ntss.speakersDict[q.ntss.speakersActive[0]]
 q.ntss.speakersActive.collect { |sp,i| [sp] ++ q.ntss.speakersDict[sp][..2] ++ [z[i]] }.do {|el| "%: [ %, %, %, %],".format(*el).postln }
 */
 
+// info on used speakers in 111: pos in space, relative amp
 q.ntss.speakersDict = (
 	//          x    y    z   amp
 	bw5: [ 1.2, 5.3, 0.0, 0.4],
@@ -66,7 +81,7 @@ q.ntss.speakersDict = (
 	sub1: [ -3.5, 2.8, 0.0, 1]
 );
 
-
+// order of speakers in use, as they appear in panners
 q.ntss.speakersOrder = [
 	// 7 XLR outs from X32, 7 to Denon amp
 	\bw5,
@@ -125,15 +140,9 @@ q.ntss.speakers = q.ntss.speakersActive.collect {|key|
 	[loc[0], loc[1], loc[2]]
 }.flat.normalize(-0.85,0.85).reshape(q.ntss.speakersActive.size, 3);
 
-//q.ntss.amp_names = q.ntss.speakers.size.collect {|i| "amp_%".format(i).asSymbol };
 q.ntss.amp_names = q.ntss.speakersActive;
 
 q.numPmcs = 16;
-~num = q.ntss.speakersOrder.size;
-~numIOchans = 32; // 16 for install, 24 for concert
-~hideChanNdefs = false;
-
-s.options.numOutputBusChannels = ~num;
 
 
 // general specs for everything
@@ -156,9 +165,9 @@ Spec.add(\delaytime, [0.01, 10, \exp]);
 Spec.add(\loop, \unipolar);
 
 
-
 // names for the hardware mic/line inputs;
 // can be set before loading NTSS, or later in code!
+// fallback is biophony names:
 q.inNames = q.inNames ? [
 	\kiteMic, \richtMic, \funkMic1,\funkMic2,
 	\micA_innen, \micB_innen, \micC_innen,
@@ -169,7 +178,6 @@ q.inNames = q.inNames ? [
 	\hydroWheel, \hydroFount,
 	\angel, \arianeFunk
 ].collect { |name, i| ((i+1).asString ++ name).asSymbol }.postcs;
-
 
 
 // make nameViews better readable
@@ -191,8 +199,6 @@ g = NdefGui(Ndef(\x));
 q.tuneNameView(g);
 */
 
-
-
 // General GUIs
 
 Butz.numButz = 24;
@@ -204,13 +210,14 @@ Butz.add(\Levels, { WinBounds.showOrMake(\Levels) });
 Butz.add(\MainFX, { WinBounds.showOrMake(\MainFX) });
 Butz.add(\N_T_S_S, {});
 
-// put NTSS specifics in its own Butz:
+// put NTSS specific GUIs etc in its own Butz:
 Butz(\NTSS).add(\N_T_S_S, {});
 Butz(\NTSS).add(\SpatioScope, { WinBounds.showOrMake(\SpatioScope) });
 Butz(\NTSS).add(\NdefMixer, { WinBounds.showOrMake(\NdefMixer) });
 Butz(\NTSS).add(\Levels, { WinBounds.showOrMake(\Levels) });
 Butz(\NTSS).add(\MainFX, { WinBounds.showOrMake(\MainFX) });
-// put all ndefs that can be sources to an NTSS channel
+
+// all ndefs that can be sources for an NTSS channel
 // on one window as dragsources.
 Butz(\NTSS).add(\allSrcNdefs, { WinBounds.showOrMake(\allSrcNdefs) });
 
@@ -220,6 +227,7 @@ WinBounds.addMake(\Levels, {
 	s.meter.window.name_("Levels").moveTo(0,0);
 });
 
+// the speaker layout in 111:
 WinBounds.addMake(\SpatioScope, {
 	q.spat = SpatioScope.new(q.ntss.speakers.collect {|sp| Point(*sp)}, bounds: Rect(0,0,500,500));
 
@@ -246,7 +254,6 @@ WinBounds.stored.putAll( (
 	N_T_S_S: Rect(520, Window.availableBounds.height - 430, 900, 510),
 	SpatioScope: Rect(120, 540, 500, 500),
 	NdefMixer: Rect(120, 300, 1086.0, 500),
-	Levels: Rect(0, 0, 58 + (~numIOchans * 38), 230.0),
 	MainFX: Rect(803.0, 642.0, 500, 560),
 ) );
 
@@ -258,6 +265,7 @@ s.waitForBoot {
 
 	s.volume = -12;
 
+	// not sure these are used in NTSS:
 	"make q.buses".postln;
 	q.bus_inside  = Bus.audio(s, 5);
 	q.bus_outside = Bus.audio(s, 5);
@@ -271,7 +279,7 @@ s.waitForBoot {
 		q.bus_bigPA,
 	];
 
-	// make mono sources first:
+	// make some mono sources first:
 	// try { "geo/geophoneReceiver.scd".postcs.loadRelative };
 	// try { "geo/geoSim.scd".postcs.loadRelative };
 
@@ -280,18 +288,16 @@ s.waitForBoot {
 
 	// and others ...
 
-	// get biophony panner functions
+	// get biophony and ntss panner functions
 	"chanPanFuncs.scd".postcs.loadRelative;
 
+	// make the proxy chains
 	"chain1make.scd".postcs.loadRelative;
 
 	0.2.wait;
 
 	"chanPanGuis.scd".postcs.loadRelative;
 	"TopWindow.scd".postcs.resolveRelative.loadPaths;
-
-	// ("audio buses top: " + s.audioBusAllocator.top).postcs;
-	// ("bufs top: " + s.bufferAllocator.top).postcs;
 
 	0.1.wait;
 
@@ -303,5 +309,6 @@ s.waitForBoot {
 
 	WinBounds.restoreAll;
 	q.ntss.ready = true;
+	// can put things here to do after NTSS is up
 	q.ntss.finalSetup;
 };
