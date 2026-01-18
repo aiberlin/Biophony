@@ -27,13 +27,13 @@ q.pannerNames = q.pcNames.collect { |name| name.asString.insert(2, "P").asSymbol
 
 (
 // just to put the config params on top
-ProxyChain.add3(\top, { |micBus, proxyBus, bufnum|
+ProxyChain.add3(\top, { |micBus, proxyBus = -1, bufnum|
 	Silent.ar;
 
 }, 0, (
 	micBus: [0, 32, \lin, 1],
-	proxyBus: [64, 100, \lin, 1],
-	bufnum: [0, 200, \lin, 1],
+	proxyBus: [-1, s.options.numAudioBusChannels, \lin, 1],
+	bufnum: [0, s.bufferAllocator.size-1, \lin, 1],
 )
 );
 
@@ -53,7 +53,7 @@ ProxyChain.add3(\ins, \mix -> { |micBus = 0, micAmp = 0, proxyBus = 4, proxyAmp 
 }, 1, (
 	micBus: [0, 32, \lin, 1],
 	micAmp: \amp4,
-	proxyBus: [0, 200, \lin, 1],
+	proxyBus: [-1, s.options.numAudioBusChannels, \lin, 1],
 	proxyAmp: \amp4,
 	noiseAmp: \amp
 )
@@ -72,7 +72,7 @@ ProxyChain.add3(\sndfile, \mix -> { |amp = 0.25, bufnum = 0, playRate = 1, tune 
 		loop: loop)
 	* amp;
 }, 1, (
-	bufnum: [0, 200, \lin, 1],
+	bufnum: [0, s.bufferAllocator.size-1, \lin, 1],
 	playRate: [-4, 4 ],
 	tune: [-12, 12 ],
 	loop: [0, 1, \lin, 1],
