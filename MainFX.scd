@@ -90,7 +90,7 @@ ProxyChain.add3(\mix2four, \filter -> { |in|
 ProxyChain.add3(
 	\mainMixer,  \filter -> { |in|
 		var snds = in;
-		var mainvol = \mainvol.kr(0, spec:\amp);
+		var mainvol = \mainvol.kr(0.25, spec:\amp);
 		var amps = q.ntss.amp_names.collect {|name| name.kr(1, spec:\amp) } ++ DC.ar(0!(32-q.ntss.amp_names.size));
 		// measured in class:
 		//var tuning = (1!20) ++ (0.0!12);

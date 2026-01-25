@@ -16,6 +16,7 @@ q = q ? ();
 
 q.ntss = q.ntss ? ();
 q.ntss.ready = false;
+q.ntss.dir = thisProcess.nowExecutingPath;
 q.topName = \N_T_S_S;
 
 // server config for 111:
